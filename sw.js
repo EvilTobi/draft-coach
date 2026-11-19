@@ -3,6 +3,7 @@ const VERSION = "draft-coach-2026-11-19";
 const CORE = [
   "./",
   "index.html",
+  "data/stats.js",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",

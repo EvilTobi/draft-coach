@@ -19,10 +19,26 @@ Nach 1–2 Minuten ist die App unter `https://<name>.github.io/<repo>/` erreichb
 **Netlify Drop:** https://app.netlify.com/drop öffnen und diesen Ordner hineinziehen.
 Ohne Konto wird die Seite nach einer Stunde gelöscht; mit kostenlosem Konto bleibt sie dauerhaft.
 
-## Datenquellen
-- Ranked-Map-Pool Season 51, Trial-Brawler, Map-Bilder: Brawl Stars Fandom-Wiki
-- Pro-Scrims 11.–19.11.2026 (2.399 Spiele): corestats.pro
-- Konter-Tipps: Fandom-Forum, r/BrawlStarsCompetitive, diverse Guides
+## Datenquellen und Gewichtung
+`data/stats.js` wird von `scripts/update_data.py` erzeugt. Die Rang-Gruppen sind gewichtet:
+**Pro 40 % · Masters III 35 % · Masters I+II 25 %**. Kleine Stichproben werden zum Masters+-Wert hin gezogen.
+
+| Kennzahl | Quelle |
+|---|---|
+| Pickrate, Winrate, Banrate je Rang (gesamt und pro Map) | DraftMeta (Ranked-Drafts der letzten 7 Tage) |
+| Map-Winrate je Rang | DraftMeta + Brawl Atlas (Ranked-Spiele der letzten Season) |
+| Counter- und Synergie-Winrate | Brawl Atlas Modell, BrawlLab, BrawlPick, Corestats (Pro-Scrims) |
+| Draft-Siegchance | Brawl-Atlas-Modell, ausgewertet für das gewichtete Rang-Niveau |
+| First-Pick-Wert pro Map | DraftMeta Draft-Opening-Analyse |
+| Pro-Daten | Corestats Scrims (9 Tage) + DraftMeta Rang „Pro“ |
+| Map-Pool, Trial-Brawler, Map-Bilder | Brawl Stars Fandom-Wiki |
+
+### Daten aktualisieren
+```bash
+python3 scripts/update_data.py
+```
+Das Skript braucht nur Python 3 (keine Pakete) und läuft einige Minuten. Es erhöht automatisch die
+Cache-Version in `sw.js`, damit installierte Apps die neuen Daten laden.
 
 Dieses Material ist inoffiziell und wird von Supercell nicht unterstützt.
 Siehe Supercells Fan Content Policy: https://supercell.com/en/fan-content-policy/
