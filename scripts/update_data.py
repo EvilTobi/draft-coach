@@ -38,7 +38,24 @@ RANKED_MAPS = {  # Ranked Season 51 (ab 19.11.2026)
 
 def log(*a): print(*a, file=sys.stderr, flush=True)
 
+CACHE = os.environ.get("DRAFT_CACHE")  # optional: Ordner für Zwischenspeicher, z. B. bei Fehlersuche
 def get(url, kind="json", tries=3, pause=0.35):
+    if CACHE:
+        import hashlib
+        path = os.path.join(CACHE, hashlib.sha1(url.encode()).hexdigest() + ".cache")
+        if os.path.exists(path):
+            body = open(path, "rb").read()
+            return json.loads(body) if kind == "json" else body.decode("utf-8", "ignore")
+    body = _fetch(url, tries, pause)
+    if body is None: return None
+    if CACHE:
+        os.makedirs(CACHE, exist_ok=True); open(path, "wb").write(body)
+    try:
+        return json.loads(body) if kind == "json" else body.decode("utf-8", "ignore")
+    except ValueError:
+        log("  ! keine gültige Antwort:", url); return None
+
+def _fetch(url, tries, pause):
     err = None
     for i in range(tries):
         try:
@@ -46,7 +63,7 @@ def get(url, kind="json", tries=3, pause=0.35):
             with urllib.request.urlopen(req, timeout=120, context=CTX) as r:
                 body = r.read()
             time.sleep(pause)
-            return json.loads(body) if kind == "json" else body.decode("utf-8", "ignore")
+            return body
         except Exception as e:  # Netzwerkfehler: kurz warten, erneut versuchen
             err = e
             time.sleep(2 * (i + 1))
@@ -274,7 +291,8 @@ for mp in RANKED_MAPS:
             an, aw = (ATLAS_MAP.get(mp, {}).get(name, {}).get(g) or (0, 0))
             if dm or an:  # DraftMeta (aktuell) und Atlas (vorige Season) nach Spielen mischen
                 dn = dm["n"] if dm else 0
-                wr = ((dm["wr"] or .5) * dn + aw) / (dn + an) if dn + an else None
+                dwr = (dm.get("wr") or .5) if dm else .5
+                wr = (dwr * dn + aw) / (dn + an) if dn + an else None
                 rows[g] = {"wr": wr, "pr": dm["pr"] if dm else None, "br": dm["br"] if dm else None, "n": dn + an}
         st = group_stats(rows) if rows else None
         if not st: continue
