@@ -3,8 +3,7 @@
 Lädt aktuelle Ranked- und Pro-Daten und schreibt data/stats.js für den Draft Coach.
 
 Quellen
-  DraftMeta (draftmeta.com)      Pick-, Win- und Banrate je Rang-Gruppe, gesamt und pro Map;
-                                 First-Pick-Wert pro Map (Draft-Opening-Analyse)
+  DraftMeta (draftmeta.com)      Pick-, Win- und Banrate je Rang-Gruppe, gesamt und pro Map
   Brawl Atlas (brawlstars-atlas)  Siegwahrscheinlichkeits-Modell (Synergie, Konter, Map, Skill)
                                  und Map-Winrates je Rang aus Millionen Ranked-Spielen
   Corestats (corestats.pro)       Pro-Scrims: Picks, Siege, Bans, Matchups, Kombis
@@ -112,12 +111,9 @@ for mp in RANKED_MAPS:
 sources["draftmeta"] = {"from": d_from, "to": d_to,
     "drafts": {g: (DM["all"][g] or {}).get("drafts", 0) for g in DM_RANKS}}
 
-log("DraftMeta: First-Pick-Werte …")
-OPENING = {}
-for mp, mode in RANKED_MAPS.items():
-    d = get("https://draftmeta.com/api/draft-opening?" + urllib.parse.urlencode({"map": mp, "mode": mode, "band": "all"}))
-    if d and isinstance(d.get("counters"), dict):
-        OPENING[mp] = {int(k): v.get("score") for k, v in d["counters"].items() if v.get("score") is not None}
+# Hinweis: DraftMeta bietet auch eine Draft-Opening-Analyse, die ist aber rang-unabhängig
+# ("rank-blind") und passt nicht zu Masters/Pro. Den First-Pick-Wert berechnet die App deshalb
+# selbst mit dem Brawl-Atlas-Modell auf dem gewichteten Rang-Niveau.
 
 # ---------- Corestats: Pro-Scrims der letzten 9 Tage ----------
 def rsc_payload(t):
@@ -177,7 +173,8 @@ if AT:
         n = s = 0
         for d, mi, r, _, cn, csum, band in AT["ratings"]["cells"]:
             if r in ranks: n += cn; s += csum
-        skill[g] = s / n if n else 0
+        skill[g] = s / n if n else None
+    if skill.get("pro") is None: skill["pro"] = skill["m3"]   # Atlas hat keine Pro-Lobbys: Masters III als Näherung
     rnd = lambda v: [round(x, 4) for x in v]
     MODEL = {
         "names": vocab, "w": rnd(mo["w"]),
@@ -281,9 +278,6 @@ for name in NAMES:
 maps = {}
 for mp in RANKED_MAPS:
     maps[mp] = {}
-    ops = OPENING.get(mp, {})
-    ranked_fp = sorted(((v, ID2NAME.get(k)) for k, v in ops.items() if ID2NAME.get(k)), reverse=True)
-    fp_rank = {n: i + 1 for i, (v, n) in enumerate(ranked_fp)}
     for name in NAMES:
         rows = {}
         for g in WEIGHTS:
@@ -297,7 +291,6 @@ for mp in RANKED_MAPS:
         st = group_stats(rows) if rows else None
         if not st: continue
         st.pop("g", None)
-        if name in fp_rank: st["fp"] = fp_rank[name]
         maps[mp][name] = st
 
 def merge_pairs(parts):

@@ -206,7 +206,7 @@ footer{font-size:12px;color:var(--muted)}
     </div>
   </section>
 
-  <footer><b>So entsteht die Bewertung:</b> Pick-, Win- und Banraten je Rang-Gruppe und Map (DraftMeta, Ranked-Drafts), Map-Winrates je Rang und ein Siegwahrscheinlichkeits-Modell für Konter, Synergie und Draft-Siegchance (Brawl Atlas, Millionen Ranked-Spiele), Pro-Scrims (Corestats), Matchup- und Teammate-Winrates (BrawlLab, BrawlPick). Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %; kleine Stichproben werden zum Masters+-Wert hin gezogen. First-Pick-Werte stammen aus der Draft-Opening-Analyse von DraftMeta. Dazu kommen Regeln für Draft-Position, Rollen und Map-Aufbau sowie Community-Konter (Fandom-Forum, r/BrawlStarsCompetitive). Kein offizielles Supercell-Produkt. Dieses Material ist inoffiziell und wird von Supercell nicht unterstützt. Weitere Informationen findest du in der <a href="https://supercell.com/en/fan-content-policy/" style="color:inherit">Fan Content Policy von Supercell</a>. Alle Einstellungen werden nur auf deinem Gerät gespeichert.</footer>
+  <footer><b>So entsteht die Bewertung:</b> Pick-, Win- und Banraten je Rang-Gruppe und Map (DraftMeta, Ranked-Drafts), Map-Winrates je Rang und ein Siegwahrscheinlichkeits-Modell für Konter, Synergie und Draft-Siegchance (Brawl Atlas, Millionen Ranked-Spiele), Pro-Scrims (Corestats), Matchup- und Teammate-Winrates (BrawlLab, BrawlPick). Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %; kleine Stichproben werden zum Masters+-Wert hin gezogen. Der First-Pick-Wert ist die Siegchance laut Modell, nachdem der Gegner seinen besten Konter gepickt hat. Dazu kommen Regeln für Draft-Position, Rollen und Map-Aufbau sowie Community-Konter (Fandom-Forum, r/BrawlStarsCompetitive). Kein offizielles Supercell-Produkt. Dieses Material ist inoffiziell und wird von Supercell nicht unterstützt. Weitere Informationen findest du in der <a href="https://supercell.com/en/fan-content-policy/" style="color:inherit">Fan Content Policy von Supercell</a>. Alle Einstellungen werden nur auf deinem Gerät gespeichert.</footer>
 </div>
 
 <script src="data/stats.js"></script>
@@ -419,6 +419,19 @@ function winProb(team,enemies,map){ if(!MD) return .5;
   const cv=ctxVec(map),A=sideOf(team),E=sideOf(enemies); let ae=0,ea=0;
   for(let j=0;j<MK;j++){ae+=A.att[j]*E.def[j]; ea+=E.att[j]*A.def[j]}
   return 1/(1+Math.exp(-(sideVal(A,cv)-sideVal(E,cv)+ae-ea))) }
+let FP_CACHE={key:"",val:{}};
+function firstPickValue(name,map){
+  const u=used(), key=map.name+"|"+[...u].sort().join(",");
+  if(FP_CACHE.key!==key){ // mögliche Gegner-Antworten: die 40 stärksten freien Brawler der Map
+    const replies=NAMES.filter(n=>!u.has(n.toLowerCase())&&MI[n]!=null).map(n=>[n,power(get(n),map)]).sort((x,y)=>y[1]-x[1]).slice(0,40).map(x=>x[0]);
+    FP_CACHE={key,val:{},replies};
+  }
+  if(FP_CACHE.val[name]==null) FP_CACHE.val[name]=Math.min(...FP_CACHE.replies.filter(r=>r!==name).map(r=>winProb([name],[r],map)));
+  return FP_CACHE.val[name];
+}
+function fpPercentile(v){ // Anteil der 40 stärksten Brawler, die als First Pick schlechter dastehen
+  if(!FP_CACHE.sorted){ FP_CACHE.sorted=FP_CACHE.replies.map(n=>firstPickValue(n,curMap())).sort((a,b)=>a-b) }
+  const a=FP_CACHE.sorted; let k=0; while(k<a.length&&a[k]<v)k++; return a.length?k/a.length:.5 }
 function modelPair(a,b){ // Konter-Anteil von a gegen b (Logit)
   const i=MI[a],j=MI[b]; if(!MD||i==null||j==null) return 0; let s=0;
   for(let k=0;k<MK;k++) s+=MD.att[i][k]*MD.def[j][k]-MD.att[j][k]*MD.def[i][k]; return s}
@@ -562,7 +575,8 @@ function score(name,map,mates,enemies,slot,team){
   const noHide = b.cls==="A" && !diveOpen && (map.open===2 || nSnip>=2);
   enemies.forEach(en=>{const e=get(en);let c=counter(b,e); if(noHide&&(e.cls==="M"||e.range===3)) c=Math.min(c,0)-.3;s+=c*plan.counterW;
     const v=VS[b.name+"|"+e.name], tag=v?` (${v[0]>0?"+":""}${Math.round(v[0]*100)}%)`:"";
-    if(c>=1){countered++;why.push(["+","kontert "+e.name+tag])} if(c<=-.8)why.push(["-","schwach gegen "+e.name+tag]);});
+    const dataNeg=v&&v[0]<=-.01, dataPos=v&&v[0]>=.01;
+    if(c>=1&&!dataNeg){countered++;why.push(["+","kontert "+e.name+tag])} else if(c<=-.8&&!dataPos)why.push(["-","schwach gegen "+e.name+tag]);});
   if(slot===5&&countered>=2){s+=.5*countered;why.unshift(["+",`kontert ${countered} von ${enemies.length} Gegnern`])}
   // Rollen im Team
   const tm=mates.map(get);
@@ -611,11 +625,13 @@ function score(name,map,mates,enemies,slot,team){
   if(inL(LASTPICK,b)){ if(slot===5){s+=.6;why.push(["+","klassischer Last Pick"])} else if(plan.later>0){s-=1.2;why.push(["-","nur als Last Pick sicher"])} }
   // Draft-Siegchance (Modell): wie stark verbessert der Pick die Gewinnwahrscheinlichkeit?
   let dp=null;
-  if(MD&&MI[b.name]!=null){ dp=winProb(mates.concat([b.name]),enemies,map)-winProb(mates,enemies,map); s+=dp*40;
-    if(dp>=.02) why.push(["+",`${sgn1(dp)} Siegchance`]); else if(dp<=-.005) why.push(["-",`${sgn1(dp)} Siegchance`]); }
+  if(MD&&MI[b.name]!=null){ dp=winProb(mates.concat([b.name]),enemies,map)-winProb(mates,enemies,map); s+=dp*40; }
   const mr=map.st&&map.st[b.name];
-  if(slot===0&&mr&&mr.fp){ if(mr.fp<=5){s+=1.2;why.unshift(["+",`Top-${mr.fp} First Pick der Map`])} else if(mr.fp<=12){s+=.6;why.push(["+","guter First Pick der Map"])} }
-  return {name:b.name,b,s,why,dp,mr};
+  // First-Pick-Wert: Siegchance des Brawlers, nachdem der Gegner seinen besten Konter gepickt hat
+  let fp=null;
+  if(slot===0&&MD&&MI[b.name]!=null){ fp=firstPickValue(b.name,map); const q=fpPercentile(fp); s+=(q-.5)*3;
+    if(q>=.8) why.unshift(["+",`schwer zu kontern (Top ${Math.max(1,Math.round((1-q)*100))} % als First Pick)`]); else if(q<=.25) why.push(["-","als First Pick leicht zu kontern"]); }
+  return {name:b.name,b,s,why,dp,mr,fp};
 }
 // Ban-Plan je nach Position
 function banPlan(map){
@@ -715,7 +731,12 @@ function renderDraft(){
   const team=ORDER[cs];
   const mates=S.picks.filter((p,i)=>p&&ORDER[i]===team), enemies=S.picks.filter((p,i)=>p&&ORDER[i]!==team);
   const u=used();
-  const list=NAMES.filter(n=>!u.has(n.toLowerCase())).map(n=>score(n,map,mates,enemies,cs,team)).sort((a,b)=>b.s-a.s).slice(0,8);
+  const all=NAMES.filter(n=>!u.has(n.toLowerCase())).map(n=>score(n,map,mates,enemies,cs,team)).sort((a,b)=>b.s-a.s);
+  // Siegchance relativ zum Durchschnitt der 30 besten Optionen
+  const pool=all.slice(0,30).filter(x=>x.dp!=null), avgDp=pool.length?pool.reduce((t,x)=>t+x.dp,0)/pool.length:0;
+  const list=all.slice(0,8);
+  list.forEach(x=>{ if(x.dp==null) return; x.dpRel=x.dp-avgDp;
+    if(x.dpRel>=.01) x.why.push(["+",`${sgn1(x.dpRel)} Siegchance ggü. Durchschnitts-Pick`]); else if(x.dpRel<=-.01) x.why.push(["-",`${sgn1(x.dpRel)} Siegchance ggü. Durchschnitts-Pick`]); });
   const myPicks=S.picks.filter((p,i)=>p&&ORDER[i]===mt).map(get);
   const th=threats(myPicks,map), plan=slotPlan(cs,team);
   const lvl=v=>v<.35?["gut","ok"]:v<.8?["mittel","mid"]:["schwach","bad"];
@@ -730,14 +751,15 @@ function renderDraft(){
   const myAll=S.picks.filter((p,i)=>p&&ORDER[i]===mt), enAll=S.picks.filter((p,i)=>p&&ORDER[i]!==mt);
   const wp=MD&&(myAll.length||enAll.length)?`<div class="wp">Siegchance deines Teams laut Modell: <b>${pct(winProb(myAll,enAll,map))}</b> <span class="sub">(${myAll.length}/3 gegen ${enAll.length}/3 Picks)</span></div>`:"";
   P.innerHTML=head+(focus?`<div class="focus">${focus}</div>`:"")+waitNote+wp+check+`<div class="sugg">`+list.map((x,i)=>{
-    const pct=Math.max(8,Math.round((x.s-min)/(max-min)*100));
+    const barW=Math.max(8,Math.round((x.s-min)/(max-min)*100));
     const rs=x.why.slice(0,5).map(([k,t])=>`<span class="tag ${k==="+"?"p":k==="t"?"t":"n"}">${k==="+"?"▲":k==="t"?"★":"▼"} ${esc(t)}</span>`).join("");
     const st=x.b.st, mr=x.mr, parts=[];
     if(st) parts.push(`WR ${pct1(st.wr)}`,`Pick ${pct(st.pr)}`,`Ban ${pct(st.br)}`);
     if(mr&&mr.n>=40) parts.push(`Map-WR ${pct1(mr.wr)}`);
-    if(x.dp!=null) parts.push(`Siegchance ${sgn1(x.dp)}`);
+    if(x.dpRel!=null) parts.push(`Siegchance ${sgn1(x.dpRel)}`);
+    if(x.fp!=null) parts.push(`First-Pick-Wert ${pct(x.fp)}`);
     const stl=parts.length?`<span class="stl">${parts.join(" · ")}</span>`:"";
-    return `<button class="s" data-take="${esc(x.name)}"><span class="rk">${i+1}</span><span class="main" style="min-width:0"><span class="nm">${esc(x.name)}<span class="cls">${CLS[x.b.cls]}</span></span>${stl}<span class="rs">${rs}</span><span class="bar"><i style="width:${pct}%"></i></span></span><span class="sc">${x.s.toFixed(1)}</span></button>`}).join("")+`</div>`;
+    return `<button class="s" data-take="${esc(x.name)}"><span class="rk">${i+1}</span><span class="main" style="min-width:0"><span class="nm">${esc(x.name)}<span class="cls">${CLS[x.b.cls]}</span></span>${stl}<span class="rs">${rs}</span><span class="bar"><i style="width:${barW}%"></i></span></span><span class="sc">${x.s.toFixed(1)}</span></button>`}).join("")+`</div>`;
 }
 function render(){
   renderMaps(); renderOrder(); renderBans(); renderDraft(); save();

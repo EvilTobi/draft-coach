@@ -29,7 +29,7 @@ Ohne Konto wird die Seite nach einer Stunde gelöscht; mit kostenlosem Konto ble
 | Map-Winrate je Rang | DraftMeta + Brawl Atlas (Ranked-Spiele der letzten Season) |
 | Counter- und Synergie-Winrate | Brawl Atlas Modell, BrawlLab, BrawlPick, Corestats (Pro-Scrims) |
 | Draft-Siegchance | Brawl-Atlas-Modell, ausgewertet für das gewichtete Rang-Niveau |
-| First-Pick-Wert pro Map | DraftMeta Draft-Opening-Analyse |
+| First-Pick-Wert | Brawl-Atlas-Modell: Siegchance nach dem besten Gegner-Konter (Masters/Pro-Niveau) |
 | Pro-Daten | Corestats Scrims (9 Tage) + DraftMeta Rang „Pro“ |
 | Map-Pool, Trial-Brawler, Map-Bilder | Brawl Stars Fandom-Wiki |
 
