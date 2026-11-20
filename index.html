@@ -141,6 +141,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .rbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--panel-2)}
 .rbar i.tA{background:var(--blue)}.rbar i.tB{background:var(--red)}
 .verdict{font-weight:700}
+.gplan{display:flex;flex-direction:column;gap:8px}
+.gplan .why{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.pl-row{background:var(--panel-2);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:3px}
+.pl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.pl-head b{font-family:var(--f-display);font-weight:400;font-size:18px}
+.pl-lane{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.pl-line{font-size:13px}
+.pl-line .pos{color:var(--good);font-variant-numeric:tabular-nums}.pl-line .neg{color:var(--bad);font-variant-numeric:tabular-nums}
+.pl-tip{font-size:12.5px;color:var(--muted)}
 .empty{color:var(--muted);font-size:13.5px;padding:8px 0}
 details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 summary{cursor:pointer;font-weight:600}
@@ -438,6 +447,40 @@ function firstPickValue(name,map){
 function fpPercentile(v){ // Anteil der 40 stärksten Brawler, die als First Pick schlechter dastehen
   if(!FP_CACHE.sorted){ FP_CACHE.sorted=FP_CACHE.replies.map(n=>firstPickValue(n,curMap())).sort((a,b)=>a-b) }
   const a=FP_CACHE.sorted; let k=0; while(k<a.length&&a[k]<v)k++; return a.length?k/a.length:.5 }
+// ---------- Spielplan nach dem Draft ----------
+const LANE={
+  gem:{T:"Lane, vorne Druck machen",A:"Lane / Flanke",D:"Lane",M:"Lane mit freier Sichtlinie",R:"Mitte hinter Wänden",C:"Lane",S:"Lane"},
+  ball:{T:"Lane, mit dem Ball nach vorne",A:"Flanke",D:"Lane",M:"Lane, Abstand halten",R:"Mitte hinter Wänden",C:"Mitte",S:"Mitte, hinter dem Team"},
+  heist:{T:"Angriff auf den Safe",A:"Angriff über die Flanke",D:"Lane zum Safe",M:"Lane, Safe beschießen",R:"Mitte / Verteidigung",C:"Verteidigung und Mitte",S:"Verteidigung"},
+  hz:{T:"in der Zone",A:"Flanke neben der Zone",D:"Lane neben der Zone",M:"Lane, Zone von außen",R:"hinter Wänden an der Zone",C:"in der Zone",S:"an der Zone, hinter dem Team"},
+  ko:{T:"Flanke über Deckung",A:"Flanke",D:"Mitte",M:"lange Lane",R:"Mitte hinter Wänden",C:"Mitte",S:"Mitte, hinter dem Team"},
+  bounty:{T:"Flanke über Deckung",A:"Flanke",D:"Mitte",M:"lange Lane",R:"Mitte hinter Wänden",C:"Mitte",S:"Mitte, hinter dem Team"}};
+const TIP={ // eigene Klasse > gegnerische Klasse
+  "A>R":"Werfer direkt anspringen, aus der Nähe sind sie wehrlos","A>M":"Sniper über die Flanke erreichen und schnell ausschalten",
+  "A>S":"Supporter zuerst angreifen, dann fehlt die Heilung","R>T":"hinter Wänden bleiben, Tank mit Flächenschaden auf Abstand halten",
+  "R>A":"eng beim Team bleiben, allein bist du leichte Beute","D>T":"Abstand halten und durchgehend Schaden auf den Tank legen",
+  "M>T":"früh anschießen, nie nah rankommen lassen","T>R":"über die Lane drücken, Werfer haben wenig Nahschaden",
+  "T>M":"über Deckung nähern, dann ist der Sniper hilflos","T>S":"Supporter jagen, wenig Schaden auf kurze Distanz",
+  "C>A":"Assassinen mit Kontrolle stoppen, bevor sie dein Team erreichen","D>A":"bei Sprung sofort zurückschießen, du gewinnst das Duell",
+  "M>R":"Werfer aus der Distanz bedrängen, sobald sie hinter Wänden hervorkommen","S>T":"Team gegen den Tank am Leben halten"};
+function matchup(a,e){ // erwarteter Winrate-Vorteil von a gegen e
+  const v=VS[a+"|"+e]; if(v) return {d:v[0],n:v[1],src:"Daten"};
+  const w=VS[e+"|"+a]; if(w) return {d:-w[0],n:w[1],src:"Daten"};
+  const m=modelPair(a,e); return {d:m*.25,n:0,src:"Modell"};
+}
+function gamePlan(mine,en,map){
+  const mb=mine.map(get), eb=en.map(get), perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+  let best=null; // gegnerische Brawler so zuteilen, dass die Summe der Vorteile am größten ist
+  perms.forEach(pm=>{const t=pm.reduce((acc,j,i)=>acc+matchup(mb[i].name,eb[j].name).d,0); if(!best||t>best.t) best={t,pm}});
+  let carrier=null;
+  if(map.mode==="gem") carrier=[...mb].sort((x,y)=>"SCMDRAT".indexOf(x.cls)-"SCMDRAT".indexOf(y.cls))[0];
+  return mb.map((b,i)=>{
+    const opp=eb[best.pm[i]], mu=matchup(b.name,opp.name);
+    const all=eb.map(e=>({e,m:matchup(b.name,e.name)})).sort((x,y)=>y.m.d-x.m.d);
+    const lane=b===carrier?"Mitte, Gem-Träger":(LANE[map.mode]||LANE.ko)[b.cls]||"Lane";
+    return {b,lane,opp,mu,focus:all[0],avoid:all[all.length-1],tip:TIP[b.cls+">"+opp.cls]||TIP[b.cls+">"+all[0].e.cls]||""};
+  });
+}
 function modelPair(a,b){ // Konter-Anteil von a gegen b (Logit)
   const i=MI[a],j=MI[b]; if(!MD||i==null||j==null) return 0; let s=0;
   for(let k=0;k<MK;k++) s+=MD.att[i][k]*MD.def[j][k]-MD.att[j][k]*MD.def[i][k]; return s}
@@ -482,7 +525,7 @@ const TANK_KILLERS = ["Griff","Pierce","Lou","Otis","Colette","Shelly","Bull","S
 const ANTI_TANK = ["Bea","Colt","Belle","Piper","Spike","Colette","Shelly","Griff","Maisie","8-Bit","Bull"];
 const BLIND = ["Gene","Sandy","Belle","Mandy","Gus","Amber","Bo","Cordelius","Kit","Charlie","Lumi","Bonnie","Crow","Wendy","Cosmo","Vince"]; // gute First Picks
 const LASTPICK = ["Mortis","Shelly","Colette","Kit","Buster","Jacky","Edgar","Darryl"]; // nur mit Info picken
-const DPS_OVR = {Colt:3.5,Bull:3.5,Shelly:3.5,Colette:3,Spike:3,Vince:3.5,"R-T":3,Chester:3,"8-Bit":3,Rico:3,Lola:3,Clancy:3,Ruby:3,Pearl:3,Maisie:3,Bea:3,
+const DPS_OVR = {Stu:1.5,Ollie:1.5,Colt:3.5,Bull:3.5,Shelly:3.5,Colette:3,Spike:3,Vince:3.5,"R-T":3,Chester:3,"8-Bit":3,Rico:3,Lola:3,Clancy:3,Ruby:3,Pearl:3,Maisie:3,Bea:3,
  Lou:1,Gene:1,Gale:1,Byron:1,Poco:1,Pam:1.5,Max:1,Gray:1,Doug:1.5,Berry:1.5,Amber:3,"Mr. P":1.5,Sandy:1.5,Tara:2,Emz:2,Sprout:1.5,Tick:1.5,Grom:2,Belle:2,Piper:1.5,Mandy:1.5,Brock:2,Angelo:1.5,Bonnie:2,Janet:2,Nani:2.5,Rey:2.5,Pierce:3.5,Griff:3.5,Wendy:1.5,Cosmo:2.5,Damian:2.5,Bolt:2.5,Trunk:2.5,Kenji:3,Melodie:3,Shade:3};
 const CLS_DPS = {T:2,A:2.5,D:2.5,M:2,R:1.5,C:1.5,S:1,"?":2};
 const dps = b => DPS_OVR[b.name] ?? (CLS_DPS[b.cls] + (b.tags.includes("at")?1:0));
@@ -622,6 +665,18 @@ function score(name,map,mates,enemies,slot,team){
       if(wb&&map.walls<=1){s-=1;why.push(["-","Gegner haben Wallbreak"])}
     }
   } else if(shortR&&map.open===2&&slot>=2&&slot<=3){s-=1;why.push(["-","ohne Reichweite auf offener Map"])}
+  // Gegner mit wenig Schaden: Ein Tank mit viel HP kommt durch, mit Max (Speed) oder Heiler noch besser
+  const lowDps=enB.filter(e=>dps(e)<=1.5&&!inL(TANK_KILLERS,e)&&!e.tags.includes("at"));
+  const enDone=enemies.length===3, sup=tm.filter(t=>t.tags.includes("h")||t.name==="Max");
+  if(b.cls==="T"&&lowDps.length>=2){
+    const killer=enB.find(e=>inL(TANK_KILLERS,e)||e.tags.includes("at"));
+    let bonus=lowDps.length===3?2.2:enDone?1.4:plan.later>0?.7:1;
+    if(killer){ bonus*=.35; why.push(["-",`${killer.name} stoppt Tanks`]) }
+    s+=bonus; why.unshift(["+",`Gegner mit wenig Schaden (${lowDps.map(e=>e.name).join(", ")})`]);
+    if(sup.length){s+=.8; why.push(["+",`${sup[0].name} unterstützt den Tank`])}
+  }
+  if((b.tags.includes("h")||b.name==="Max")&&lowDps.length>=2&&tm.some(t=>t.cls==="T")){
+    s+=1; why.push(["+",`${b.name==="Max"?"Speed":"Heilung"} für euren Tank gegen wenig Schaden`]) }
   // Frank auf offenen Maps und in Heist: kommt schwer an Gegner heran, Colette und Lou kontern ihn hart
   if(b.name==="Frank"&&(map.open===2||map.mode==="heist")){
     s-=1.5; why.unshift(["-",map.mode==="heist"?"Frank ist in Heist schwach":"Frank auf offener Map schwach"]);
@@ -745,7 +800,18 @@ function renderDraft(){
         <div class="rbar" role="img" aria-label="Gewinnchance: Dein Team ${d} Prozent, Gegner ${100-d} Prozent"><i class="t${mt}" style="width:${d}%"></i><i class="t${mt==="A"?"B":"A"}" style="width:${100-d}%"></i></div>
         <div class="verdict">${verdict}</div><div class="sub">Gewinnchance laut Modell (Brawl Atlas) für ${esc(map.name)} auf Masters/Pro-Niveau. Spielstärke und Absprachen entscheiden am Ende mit.</div></div>`;
     }
-    P.innerHTML=`<div class="status mine">Draft komplett</div>${res}<div>Dein Team: <b>${mine.map(esc).join(", ")}</b><br>Gegner: <b>${en.map(esc).join(", ")}</b></div><div class="sub">Viel Erfolg auf ${esc(map.name)}!</div>`;return;
+    let plan="";
+    if(mine.length===3&&en.length===3){
+      const fmt=m=>`${m.d>=0?"+":"−"}${Math.abs(m.d*100).toFixed(1).replace(".",",")} %${m.src==="Daten"?` · ${m.n.toLocaleString("de-DE")} Spiele`:" · Modell"}`;
+      plan=`<div class="gplan"><div class="why">Spielplan</div>${gamePlan(mine,en,map).map(g=>`<div class="pl-row">
+        <div class="pl-head"><b>${esc(g.b.name)}</b><span class="pl-lane">${esc(g.lane)}</span></div>
+        <div class="pl-line">Gegenüber: <b>${esc(g.opp.name)}</b> <span class="${g.mu.d>=0?"pos":"neg"}">${fmt(g.mu)}</span></div>
+        ${g.focus.e!==g.opp&&g.focus.m.d>g.mu.d+.01?`<div class="pl-line">Bester Fokus: <b>${esc(g.focus.e.name)}</b> <span class="pos">${fmt(g.focus.m)}</span></div>`:""}
+        ${g.avoid.m.d<=-.02&&g.avoid.e!==g.opp?`<div class="pl-line">Vorsicht vor: <b>${esc(g.avoid.e.name)}</b> <span class="neg">${fmt(g.avoid.m)}</span></div>`:""}
+        ${g.tip?`<div class="pl-tip">${esc(g.tip)}</div>`:""}</div>`).join("")}
+        <div class="sub">Winrate-Vorteil im direkten Duell: Pro-Scrims, BrawlLab und BrawlPick; ohne Daten das Brawl-Atlas-Modell. Lanes sind Faustregeln nach Klasse und Modus.</div></div>`;
+    }
+    P.innerHTML=`<div class="status mine">Draft komplett</div>${res}${plan}<div>Dein Team: <b>${mine.map(esc).join(", ")}</b><br>Gegner: <b>${en.map(esc).join(", ")}</b></div><div class="sub">Viel Erfolg auf ${esc(map.name)}!</div>`;return;
   }
   const team=ORDER[cs];
   const mates=S.picks.filter((p,i)=>p&&ORDER[i]===team), enemies=S.picks.filter((p,i)=>p&&ORDER[i]!==team);
