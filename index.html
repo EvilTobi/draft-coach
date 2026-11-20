@@ -135,6 +135,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .stl{display:block;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
 .wp{font-size:13.5px}
 .wp b{color:var(--accent);font-size:16px}
+.result{display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:12px;padding:12px}
+.rh{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.rh b{font-family:var(--f-display);font-weight:400;font-size:26px;margin-left:4px;font-variant-numeric:tabular-nums}
+.rbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--panel-2)}
+.rbar i.tA{background:var(--blue)}.rbar i.tB{background:var(--red)}
+.verdict{font-weight:700}
 .empty{color:var(--muted);font-size:13.5px;padding:8px 0}
 details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 summary{cursor:pointer;font-weight:600}
@@ -616,6 +622,12 @@ function score(name,map,mates,enemies,slot,team){
       if(wb&&map.walls<=1){s-=1;why.push(["-","Gegner haben Wallbreak"])}
     }
   } else if(shortR&&map.open===2&&slot>=2&&slot<=3){s-=1;why.push(["-","ohne Reichweite auf offener Map"])}
+  // Frank auf offenen Maps und in Heist: kommt schwer an Gegner heran, Colette und Lou kontern ihn hart
+  if(b.name==="Frank"&&(map.open===2||map.mode==="heist")){
+    s-=1.5; why.unshift(["-",map.mode==="heist"?"Frank ist in Heist schwach":"Frank auf offener Map schwach"]);
+    const open=["Colette","Lou"].filter(n=>!used().has(n.toLowerCase()));
+    if(open.length&&plan.later>0){ s-=1.2*open.length; why.unshift(["-",`${open.join(" und ")} noch frei: harter Konter`]) }
+  }
   // Position
   if(slot===0){
     if(inL(BLIND,b)){s+=.8;why.push(["+","sicherer Blind-Pick"])}
@@ -726,7 +738,14 @@ function renderDraft(){
   if(!map||!S.pos){P.innerHTML=`<div class="empty">Wähle oben Map und Position.</div>`;return}
   if(cs<0){
     const mine=S.picks.filter((_,i)=>ORDER[i]===mt), en=S.picks.filter((_,i)=>ORDER[i]!==mt);
-    P.innerHTML=`<div class="status mine">Draft komplett</div><div>Dein Team: <b>${mine.map(esc).join(", ")}</b><br>Gegner: <b>${en.map(esc).join(", ")}</b></div><div class="sub">Viel Erfolg auf ${esc(map.name)}!</div>`;return;
+    let res="";
+    if(MD){
+      const p=winProb(mine,en,map), d=Math.round(p*100), verdict=p>=.55?"Dein Team hat den besseren Draft.":p<=.45?"Die Gegner haben den besseren Draft.":"Die Drafts sind ungefähr gleich stark.";
+      res=`<div class="result"><div class="rh"><span>Dein Team <b>${d} %</b></span><span>Gegner <b>${100-d} %</b></span></div>
+        <div class="rbar" role="img" aria-label="Gewinnchance: Dein Team ${d} Prozent, Gegner ${100-d} Prozent"><i class="t${mt}" style="width:${d}%"></i><i class="t${mt==="A"?"B":"A"}" style="width:${100-d}%"></i></div>
+        <div class="verdict">${verdict}</div><div class="sub">Gewinnchance laut Modell (Brawl Atlas) für ${esc(map.name)} auf Masters/Pro-Niveau. Spielstärke und Absprachen entscheiden am Ende mit.</div></div>`;
+    }
+    P.innerHTML=`<div class="status mine">Draft komplett</div>${res}<div>Dein Team: <b>${mine.map(esc).join(", ")}</b><br>Gegner: <b>${en.map(esc).join(", ")}</b></div><div class="sub">Viel Erfolg auf ${esc(map.name)}!</div>`;return;
   }
   const team=ORDER[cs];
   const mates=S.picks.filter((p,i)=>p&&ORDER[i]===team), enemies=S.picks.filter((p,i)=>p&&ORDER[i]!==team);
