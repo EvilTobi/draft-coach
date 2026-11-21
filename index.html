@@ -169,6 +169,9 @@ summary{cursor:pointer;font-weight:600}
 .h .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .h .acts .btn{padding:6px 10px;font-size:13px}
 .h .acts .btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.h .hn{display:block;margin-top:8px}
+.h textarea{display:block;width:100%;margin-top:4px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:16px;resize:vertical}
+.h .hnote{order:5;flex-basis:100%;color:var(--muted);font-size:12.5px;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .win{color:var(--good)} .loss{color:var(--bad)}
 .btn.ghost{background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -514,6 +517,7 @@ DEFAULT_MAPS.forEach(m=>{const d=ST.maps[m.name]; if(d&&Object.keys(d).length>20
 // Wer kontert wen (Quellen: Fandom-Forum „Drafting Tips for Ranked“ und „How to Counter Meta brawlers“,
 // r/BrawlStarsCompetitive Counter-Guide, brawlpick Winrates, Konter-Guides 2025/26). Teils älter als der aktuelle Patch.
 const COUNTERED_BY = {
+ "Mr. P":["Edgar","Mortis","Kenji","Mico","Lily","Fang"], // Assassinen springen über seinen Koffer-Wurf hinweg
  "Cordelius":["Buster","Crow","Sandy","Ash","Draco","Willow"],
  "Charlie":["Barley","Juju","Larry & Lawrie","Penny","Dynamike","Tick","Sprout","Grom"],
  "Gus":["Tara","Kaze","Darryl","Mr. P","Bea"],
@@ -896,7 +900,7 @@ function recordDraft(){ // fertigen Draft speichern bzw. aktualisieren, wenn ein
   // Ohne „Neuer Draft“ neu eingetragen (kaum Picks gleich): als eigener Eintrag speichern statt den alten zu überschreiben
   if(old&&(old.map!==map.name||old.picks.filter((p,i)=>p===S.picks[i]).length<3)){S.did=newId();old=null}
   const e={id:S.did,t:old?old.t:Date.now(),map:map.name,mode:map.mode,pos:S.pos,bans:[...S.bans],picks:[...S.picks],
-    wp:MD?winProb(mine,en,map):null,res:old?old.res:null};
+    wp:MD?winProb(mine,en,map):null,res:old?old.res:null,note:old?old.note:""};
   if(old&&JSON.stringify(old)===JSON.stringify(e)) return;
   HIST=[e].concat(HIST.filter(h=>h.id!==e.id)).sort((a,b)=>b.t-a.t).slice(0,30); store.set("hist",HIST);
 }
@@ -904,17 +908,20 @@ function renderHist(){
   const w=HIST.filter(h=>h.res==="w").length, l=HIST.filter(h=>h.res==="l").length;
   $("hist-n").textContent=HIST.length?`(${HIST.length}${w+l?` · ${w} ${w===1?"Sieg":"Siege"}, ${l} ${l===1?"Niederlage":"Niederlagen"}`:""})`:"";
   if(!HIST.length){$("histlist").innerHTML=`<div class="sub">Noch kein Draft gespeichert. Sobald alle 6 Picks eingetragen sind, landet der Draft hier.</div>`;return}
+  const open=new Set([...document.querySelectorAll("#histlist details[open]")].map(d=>d.dataset.hid));
   const dt=t=>new Date(t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
   $("histlist").innerHTML=HIST.map(h=>{
     const mt=ORDER[h.pos-1], mine=h.picks.filter((_,i)=>ORDER[i]===mt), en=h.picks.filter((_,i)=>ORDER[i]!==mt);
     const wp=h.wp==null?"":`${Math.round(h.wp*100)} %`;
     const res=h.res==="w"?`<span class="win">Sieg</span>`:h.res==="l"?`<span class="loss">Niederlage</span>`:"";
-    return `<details class="h"${h.id===S.did?" open":""}><summary><span class="hm m-${h.mode}">${MODES[h.mode]}</span><b>${esc(h.map)}</b><span class="sub">${dt(h.t)} · Pick ${h.pos}</span>
+    return `<details class="h" data-hid="${h.id}"${h.id===S.did||open.has(h.id)?" open":""}><summary><span class="hm m-${h.mode}">${MODES[h.mode]}</span><b>${esc(h.map)}</b><span class="sub">${dt(h.t)} · Pick ${h.pos}</span>
+      ${h.note?`<span class="hnote">„${esc(h.note.length>60?h.note.slice(0,60)+"…":h.note)}“</span>`:""}
       <span class="hr">${res||(wp?`<span class="sub">Chance</span> ${wp}`:"")}</span></summary>
       <div class="tm"><span class="sub">Dein Team:</span> ${mine.map(esc).join(", ")}</div>
       <div class="tm"><span class="sub">Gegner:</span> ${en.map(esc).join(", ")}</div>
       ${h.bans.length?`<div class="tm"><span class="sub">Eure Bans:</span> ${h.bans.map(esc).join(", ")}</div>`:""}
       ${wp?`<div class="tm"><span class="sub">Gewinnchance laut Modell:</span> ${wp}</div>`:""}
+      <label class="hn"><span class="sub">Notiz (z. B. warum ihr verloren habt)</span><textarea data-hnote="${h.id}" rows="2" maxlength="500" placeholder="z. B. Mortis kam zu leicht an unsere Sniper ran">${esc(h.note||"")}</textarea></label>
       <div class="acts"><button class="btn ghost" data-hres="${h.id}" data-r="w" aria-pressed="${h.res==="w"}">Gewonnen</button><button class="btn ghost" data-hres="${h.id}" data-r="l" aria-pressed="${h.res==="l"}">Verloren</button>
       <button class="btn ghost" data-hopen="${h.id}">Im Draft öffnen</button><button class="btn ghost" data-hdel="${h.id}">Löschen</button></div></details>`}).join("");
 }
@@ -941,7 +948,9 @@ document.addEventListener("click",e=>{
   if(d.hdel){HIST=HIST.filter(x=>x.id!==d.hdel); store.set("hist",HIST); if(S.did===d.hdel)S.did=newId(); renderHist(); return}
   if(d.hopen){const h=HIST.find(x=>x.id===d.hopen); if(h&&allMaps().some(m=>m.name===h.map)){Object.assign(S,{map:h.map,pos:h.pos,bans:[...h.bans],picks:[...h.picks],did:h.id}); render(); $("s-draft").scrollIntoView({behavior:"smooth"})} else toast("Map nicht mehr im Pool"); return}
 });
-document.addEventListener("input",e=>{if(e.target.dataset.kind)fillPicker(e.target.dataset.kind,e.target.value)});
+document.addEventListener("change",e=>{if(e.target.dataset.hnote)renderHist()});
+document.addEventListener("input",e=>{
+  if(e.target.dataset.hnote){const h=HIST.find(x=>x.id===e.target.dataset.hnote); if(h){h.note=e.target.value.slice(0,500); store.set("hist",HIST)} return}if(e.target.dataset.kind)fillPicker(e.target.dataset.kind,e.target.value)});
 document.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&e.target.dataset.kind){e.preventDefault();const f=$("pc-"+e.target.dataset.kind).querySelector("[data-choose]");f&&f.click()}
 });
