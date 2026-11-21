@@ -45,6 +45,10 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 - Frank auf offenen Maps und in Heist abwerten, stärker wenn Colette/Lou frei sind.
 - Gegner mit wenig Schaden (Stu, Mr. P, Tick, Ollie, Gene …): Tank mit viel HP stark, mit Max oder Heiler noch stärker;
   Bonus klein, wenn Gegner einen Tank-Killer hat. Gegen Mr. P + Werfer: Assassinen und Tanks.
+- Tanks in Knockout/Bounty stark abgewertet (Modus-Abzug, Konter-Vorteile zählen nur halb).
+- Zwei Werfer (Klasse R) nur als eigener Last Pick und nur ohne Gegner-Assassinen. Mr. P ist Controller, aber werfer-ähnlich
+  (zählt im Duo mit einem Werfer halb) und braucht einen Partner mit mittlerer Range oder viel HP.
+- Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Öffnen, Löschen.
 - Nutzer-Top-Meta (mind. 9): Lou, Vince, Amber, Melodie, Mr. P, Gale, Colette, Rico, Chester, Mandy.
 - Siegchance im Vorschlag relativ zum Durchschnitts-Pick; nach dem Draft Gewinnchance beider Teams + Spielplan
   (Lane/Mitte als Faustregel, Gegenüber/Fokus/Vorsicht mit Matchup-Winrates und Spielzahl).
