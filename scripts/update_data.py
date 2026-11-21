@@ -163,7 +163,21 @@ log("Brawl Atlas …")
 A = get("https://brawlstars-atlas.pages.dev/assets/app.js", kind="text")
 ver = re.search(r'assets/data\.json\?v=([a-z0-9]+)', A or "")
 AT = get("https://brawlstars-atlas.pages.dev/assets/data.json" + ("?v=" + ver.group(1) if ver else ""), pause=0.5)
-MODEL = None; ATLAS_MAP = {}
+MODEL = None; ATLAS_MAP = {}; ATLAS_NOTE = None
+# Kurz nach Season-Start hat Atlas kaum Masters-Spiele (Rang-Reset). Dann Vorsaison nutzen:
+# ATLAS_FALLBACK=<data.json der Vorsaison>, sonst das Modell aus der bisherigen data/stats.js behalten.
+def masters_games(at): return sum(c[4] for c in at["ratings"]["cells"] if c[2] >= 19)
+if AT and masters_games(AT) < 20000:
+    log(f"  neue Atlas-Season {AT['season']['season']}: nur {masters_games(AT)} Masters-Spiele, zu wenig")
+    fb = os.environ.get("ATLAS_FALLBACK")
+    AT = json.load(open(fb)) if fb and os.path.exists(fb) else None
+    if AT: ATLAS_NOTE = "Vorsaison, neue Season hat noch zu wenig Masters-Spiele"; log("  nutze Vorsaison", AT["season"]["season"])
+    else:
+        try:
+            old = json.loads(open(OUT, encoding="utf-8").read().split("=", 1)[1].strip().rstrip(";"))
+            MODEL = old.get("model"); sources["atlas"] = dict(old.get("sources", {}).get("atlas", {}), note="Modell aus letzter Aktualisierung behalten")
+            log("  behalte bisheriges Atlas-Modell")
+        except Exception as e: log("  ! kein altes Modell:", e)
 if AT:
     mo, se = AT["model"], AT["season"]
     vocab = [nm(v) for v in mo["vocab"]]
@@ -201,6 +215,7 @@ if AT:
                 out[g] = (n, w)
             ATLAS_MAP.setdefault(mp, {})[name] = out
     sources["atlas"] = {"season": se["season"], "games": se["games"], "from": se["first_day"], "to": se["last_day"]}
+    if ATLAS_NOTE: sources["atlas"]["note"] = ATLAS_NOTE
 
 # ---------- BrawlLab: Matchups und Teammates (Ranked, alle Ränge) ----------
 LAB_VS = {}; LAB_SYN = {}

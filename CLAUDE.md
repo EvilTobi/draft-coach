@@ -8,6 +8,8 @@ Draft-Hilfe für Brawl Stars Ranked (Deutsch). Statische PWA, live unter https:/
 - `data/stats.js` – `window.STATS`, erzeugt von `scripts/update_data.py` (nicht von Hand bearbeiten).
 - `scripts/update_data.py` – lädt alle Quellen (~15 min). Lokal: `SSL_CERT_FILE=/root/.ccr/ca-bundle.crt python3 scripts/update_data.py`;
   optional `DRAFT_CACHE=<ordner>` als Download-Zwischenspeicher. Erhöht automatisch `VERSION` in `sw.js`.
+  Kurz nach Season-Start (< 20.000 Masters-Spiele bei Atlas) nutzt es `ATLAS_FALLBACK=<data.json der Vorsaison>`
+  oder behält das bisherige Atlas-Modell. Atlas liefert volle Season-Daten ca. 4 Tage nach Season-Start.
 - `sw.js` – Offline-Cache. **Bei jeder Änderung `VERSION` erhöhen**, sonst bekommen installierte Apps das Update nicht.
 - `manifest.webmanifest`, `icons/`, `maps/*.webp` (Map-Bilder aus dem Fandom-Wiki).
 
