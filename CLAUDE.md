@@ -47,7 +47,8 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Bonus klein, wenn Gegner einen Tank-Killer hat. Gegen Mr. P + Werfer: Assassinen und Tanks.
 - Tanks in Knockout/Bounty stark abgewertet (Modus-Abzug, Konter-Vorteile zählen nur halb).
 - Zwei Werfer (Klasse R) nur als eigener Last Pick und nur ohne Gegner-Assassinen. Mr. P ist Controller, aber werfer-ähnlich
-  (zählt im Duo mit einem Werfer halb) und braucht einen Partner mit mittlerer Range oder viel HP.
+  (zählt im Duo mit einem Werfer halb). Gegner mit mittlerer Range/viel HP füttern seine Super (Bonus);
+  Gegner-Sniper (Mandy, Piper …) auf offenen Maps = Abzug, weil er weniger Reichweite hat.
 - Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Öffnen, Löschen.
 - Nutzer-Top-Meta (mind. 9): Lou, Vince, Amber, Melodie, Mr. P, Gale, Colette, Rico, Chester, Mandy.
 - Siegchance im Vorschlag relativ zum Durchschnitts-Pick; nach dem Draft Gewinnchance beider Teams + Spielplan

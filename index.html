@@ -550,7 +550,7 @@ const dps = b => DPS_OVR[b.name] ?? (CLS_DPS[b.cls] + (b.tags.includes("at")?1:0
 const inL = (l,b) => l.includes(b.name);
 const isThrower = b => b.cls==="R"; // echte Werfer (Artillerie)
 const lobby = b => isThrower(b) || b.name==="Mr. P"; // Mr. P ist Controller, aber werfer-ähnlich (über Wände, anfällig für Assassinen)
-const holdsSpace = b => b.cls==="T" || (b.range===2 && ["D","A"].includes(b.cls)); // mittlere Range oder viel HP
+const holdsSpace = b => b.cls==="T" || (b.range===2 && ["D","A"].includes(b.cls)); // mittlere Range oder viel HP (füttern Mr. Ps Super)
 
 // ---------- Bewertung ----------
 function mapFit(b,map){
@@ -697,11 +697,15 @@ function score(name,map,mates,enemies,slot,team){
     else if(enA){s-=half?2.5:5;why.unshift(["-",`${lbl} mit ${other}, Gegner haben ${enA.name}`])}
     else why.push(["+",`${lbl} möglich: Gegner haben keinen Assassinen`]);
   }
-  // Mr. P braucht einen Partner mit mittlerer Range oder viel HP, der Druck macht, damit er seine Super lädt
-  if(b.name==="Mr. P"&&tm.length&&!tm.some(holdsSpace)){
-    s-=tm.length===2?1.5:.6; why.push(["-","Mr. P braucht einen Partner mit mittlerer Range oder viel HP"]) }
-  if(holdsSpace(b)&&tm.some(t=>t.name==="Mr. P")&&!tm.some(holdsSpace)){
-    s+=.8; why.push(["+","hält Mr. P den Raum frei"]) }
+  // Mr. P lädt seine Super schnell gegen Gegner mit mittlerer Range oder viel HP (sie „füttern“ ihn);
+  // gegen Sniper auf offenen Maps kommt er wegen geringerer Reichweite kaum zum Treffen und stirbt schnell
+  if(b.name==="Mr. P"){
+    const feed=enB.filter(holdsSpace), snip=enB.filter(e=>e.cls==="M"||(e.range===3&&e.cls==="D"));
+    if(feed.length){ s+=Math.min(1.5,.7*feed.length); why.push(["+",`${feed.map(e=>e.name).join(" und ")} ${feed.length>1?"füttern":"füttert"} seine Super`]) }
+    if(snip.length&&map.open>=1){ s-=(map.open===2?1.3:.6)*snip.length;
+      why.unshift(["-",`${snip.map(e=>e.name).join(" und ")} ${snip.length>1?"halten":"hält"} ihn ${map.open===2?"auf offener Map fern":"mit mehr Reichweite auf Abstand"}`]) }
+    else if(map.open===2&&plan.later>0&&snip.length===0){ s-=.5; why.push(["-","auf offener Map anfällig für Gegner-Sniper"]) }
+  }
   // Gegner mit wenig Schaden: Ein Tank mit viel HP kommt durch, mit Max (Speed) oder Heiler noch besser
   const lowDps=enB.filter(e=>dps(e)<=1.5&&!inL(TANK_KILLERS,e)&&!e.tags.includes("at"));
   const enDone=enemies.length===3, sup=tm.filter(t=>t.tags.includes("h")||t.name==="Max");
