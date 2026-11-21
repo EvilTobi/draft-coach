@@ -164,14 +164,15 @@ A = get("https://brawlstars-atlas.pages.dev/assets/app.js", kind="text")
 ver = re.search(r'assets/data\.json\?v=([a-z0-9]+)', A or "")
 AT = get("https://brawlstars-atlas.pages.dev/assets/data.json" + ("?v=" + ver.group(1) if ver else ""), pause=0.5)
 MODEL = None; ATLAS_MAP = {}; ATLAS_NOTE = None
-# Kurz nach Season-Start hat Atlas kaum Masters-Spiele (Rang-Reset). Dann Vorsaison nutzen:
-# ATLAS_FALLBACK=<data.json der Vorsaison>, sonst das Modell aus der bisherigen data/stats.js behalten.
+# Kurz nach Season-Start hat Atlas kaum Masters-Spiele (Rang-Reset). Das Modell der neuen Season ist trotzdem
+# brauchbar (aktuelle Balance); fehlende Rang-Gruppen bekommen den Skill der höchsten vorhandenen Gruppe.
+# Nur wenn fast gar keine Masters-Spiele da sind: ATLAS_FALLBACK=<data.json> oder bisheriges Modell behalten.
 def masters_games(at): return sum(c[4] for c in at["ratings"]["cells"] if c[2] >= 19)
-if AT and masters_games(AT) < 20000:
+if AT and masters_games(AT) < 300:
     log(f"  neue Atlas-Season {AT['season']['season']}: nur {masters_games(AT)} Masters-Spiele, zu wenig")
     fb = os.environ.get("ATLAS_FALLBACK")
     AT = json.load(open(fb)) if fb and os.path.exists(fb) else None
-    if AT: ATLAS_NOTE = "Vorsaison, neue Season hat noch zu wenig Masters-Spiele"; log("  nutze Vorsaison", AT["season"]["season"])
+    if AT: ATLAS_NOTE = "Rückfall auf andere Season"; log("  nutze", AT["season"]["season"])
     else:
         try:
             old = json.loads(open(OUT, encoding="utf-8").read().split("=", 1)[1].strip().rstrip(";"))
@@ -188,7 +189,9 @@ if AT:
         for d, mi, r, _, cn, csum, band in AT["ratings"]["cells"]:
             if r in ranks: n += cn; s += csum
         skill[g] = s / n if n else None
-    if skill.get("pro") is None: skill["pro"] = skill["m3"]   # Atlas hat keine Pro-Lobbys: Masters III als Näherung
+    order = ["m12", "m3", "pro"]   # Atlas hat keine Pro-Lobbys; fehlende Gruppen: nächstniedrigere vorhandene
+    for i, g in enumerate(order):
+        if skill.get(g) is None: skill[g] = next((skill[h] for h in reversed(order[:i]) if skill.get(h) is not None), 0.0)
     rnd = lambda v: [round(x, 4) for x in v]
     MODEL = {
         "names": vocab, "w": rnd(mo["w"]),
@@ -321,8 +324,9 @@ base = {b: smw(v[1], v[0]) for b, v in SC.items()}
 cs_vs = {(a, b): (n, smw(w, n, 8) - base[a]) for (a, b), (n, w) in SC_VS.items() if n >= 12}
 cs_syn = {(a, b): (n, smw(w, n, 8) - (base[a] + base[b]) / 2) for (a, b), (n, w) in SC_SYN.items() if n >= 12}
 lab_syn = {tuple(sorted(k)): v for k, v in LAB_SYN.items()}
-VS = merge_pairs([(WEIGHTS["pro"], cs_vs), (0.3, LAB_VS), (0.3, BP_VS)])
-SYN = merge_pairs([(WEIGHTS["pro"], cs_syn), (0.6, lab_syn)])
+# BrawlLab und BrawlPick haben keinen Datumsfilter (können Spiele vor dem letzten Balance-Update enthalten): halbe Gewichtung
+VS = merge_pairs([(WEIGHTS["pro"], cs_vs), (0.15, LAB_VS), (0.15, BP_VS)])
+SYN = merge_pairs([(WEIGHTS["pro"], cs_syn), (0.3, lab_syn)])
 
 stats = {
     "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),

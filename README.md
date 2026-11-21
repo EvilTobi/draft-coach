@@ -40,8 +40,8 @@ python3 scripts/update_data.py
 Das Skript braucht nur Python 3 (keine Pakete) und läuft einige Minuten. Es erhöht automatisch die
 Cache-Version in `sw.js`, damit installierte Apps die neuen Daten laden.
 
-Direkt nach einem Season-Start hat Brawl Atlas noch kaum Masters-Spiele. Dann nutzt das Skript die
-Vorsaison (`ATLAS_FALLBACK=<data.json der Vorsaison>`) oder behält das bisherige Siegmodell.
+Direkt nach einem Season-Start hat Brawl Atlas noch kaum Masters-Spiele. Das Skript nutzt trotzdem die neue
+Season (aktuelle Balance) und überträgt den Skill der höchsten vorhandenen Rang-Gruppe auf die fehlenden.
 
 Dieses Material ist inoffiziell und wird von Supercell nicht unterstützt.
 Siehe Supercells Fan Content Policy: https://supercell.com/en/fan-content-policy/
