@@ -159,6 +159,17 @@ summary{cursor:pointer;font-weight:600}
 .addmap label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
 .addmap input,.addmap select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--fg);font:inherit;font-size:13.5px;width:100%}
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:8px 14px;font-weight:700}
+#hist{margin-top:14px}
+.h{background:var(--panel-2);padding:8px 10px;margin-top:6px}
+.h summary{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-weight:500;font-size:13.5px}
+.h summary b{font-family:var(--f-display);font-weight:400;font-size:16px}
+.h .hm{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.h .hr{margin-left:auto;font-weight:700}
+.h .tm{margin:8px 0 2px;font-size:13px}
+.h .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.h .acts .btn{padding:6px 10px;font-size:13px}
+.h .acts .btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.win{color:var(--good)} .loss{color:var(--bad)}
 .btn.ghost{background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .hidden-step{opacity:.45;pointer-events:none}
@@ -219,6 +230,10 @@ footer{font-size:12px;color:var(--muted)}
       <div class="board" id="board"></div>
       <div class="panel" id="panel"></div>
     </div>
+    <details id="hist"><summary>Letzte Drafts <span class="sub" id="hist-n"></span></summary>
+      <div class="sub" style="margin:6px 0 8px">Jeder fertige Draft wird hier automatisch gespeichert (nur auf diesem Gerät, die letzten 30).</div>
+      <div id="histlist"></div>
+    </details>
   </section>
 
   <footer><b>So entsteht die Bewertung:</b> Pick-, Win- und Banraten je Rang-Gruppe und Map (DraftMeta, Ranked-Drafts), Map-Winrates je Rang und ein Siegwahrscheinlichkeits-Modell für Konter, Synergie und Draft-Siegchance (Brawl Atlas, Millionen Ranked-Spiele), Pro-Scrims (Corestats), Matchup- und Teammate-Winrates (BrawlLab, BrawlPick). Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %; kleine Stichproben werden zum Masters+-Wert hin gezogen. Der First-Pick-Wert ist die Siegchance laut Modell, nachdem der Gegner seinen besten Konter gepickt hat. Dazu kommen Regeln für Draft-Position, Rollen und Map-Aufbau sowie Community-Konter (Fandom-Forum, r/BrawlStarsCompetitive). Kein offizielles Supercell-Produkt. Dieses Material ist inoffiziell und wird von Supercell nicht unterstützt. Weitere Informationen findest du in der <a href="https://supercell.com/en/fan-content-policy/" style="color:inherit">Fan Content Policy von Supercell</a>. Alle Einstellungen werden nur auf deinem Gerät gespeichert.</footer>
@@ -381,8 +396,8 @@ const MODE_FIT = {
  ball:{T:1.5,A:1,D:.5,M:-1,R:.5,C:1,S:0},
  heist:{T:.5,A:.5,D:2,M:.5,R:.5,C:-.5,S:-1},
  hz:{T:.5,A:-.5,D:.5,M:0,R:1,C:2,S:1},
- ko:{T:-1.5,A:0,D:.5,M:2,R:1,C:.5,S:1},
- bounty:{T:-1.5,A:.5,D:.5,M:2,R:1,C:.5,S:.5}
+ ko:{T:-3.5,A:0,D:.5,M:2,R:1,C:.5,S:1},
+ bounty:{T:-3,A:.5,D:.5,M:2,R:1,C:.5,S:.5}
 };
 const ORDER = ["A","B","B","A","A","B"];
 
@@ -401,6 +416,9 @@ const saved = store.get("state",null);
 if(saved){Object.assign(S,saved)}
 if(!allMaps().some(m=>m.name===S.map))S.map="Hard Rock Mine";
 const save = () => store.set("state",S);
+const newId = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+if(!S.did) S.did=newId();
+let HIST = store.get("hist",[]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
@@ -530,13 +548,16 @@ const DPS_OVR = {Stu:1.5,Ollie:1.5,Colt:3.5,Bull:3.5,Shelly:3.5,Colette:3,Spike:
 const CLS_DPS = {T:2,A:2.5,D:2.5,M:2,R:1.5,C:1.5,S:1,"?":2};
 const dps = b => DPS_OVR[b.name] ?? (CLS_DPS[b.cls] + (b.tags.includes("at")?1:0));
 const inL = (l,b) => l.includes(b.name);
+const isThrower = b => b.cls==="R"; // echte Werfer (Artillerie)
+const lobby = b => isThrower(b) || b.name==="Mr. P"; // Mr. P ist Controller, aber werfer-ähnlich (über Wände, anfällig für Assassinen)
+const holdsSpace = b => b.cls==="T" || (b.range===2 && ["D","A"].includes(b.cls)); // mittlere Range oder viel HP
 
 // ---------- Bewertung ----------
 function mapFit(b,map){
   let s=0, why=[];
   const mf=(MODE_FIT[map.mode]||{})[b.cls]||0; s+=mf;
   if(mf>=1.5) why.push(["+","stark in "+MODES[map.mode]]);
-  if(mf<=-1) why.push(["-","schwach in "+MODES[map.mode]]);
+  if(mf<=-1) why.push(["-",b.cls==="T"&&["ko","bounty"].includes(map.mode)?`Tanks sind in ${MODES[map.mode]} schwach`:"schwach in "+MODES[map.mode]]);
   if((map.mode==="ball"||map.mode==="heist")&&b.tags.includes("w")) s+=.5;
   const o=map.open-1, w=map.walls-1, bu=map.bush/2;
   let t=0;
@@ -622,7 +643,9 @@ function score(name,map,mates,enemies,slot,team){
   const enPeel = enB.some(e=>e.cls==="T"||(e.cls==="D"&&e.range<=2)||e.tags.includes("k")||inL(ANTI_ASSASSIN,e));
   const diveOpen = slot===5 && enemies.length===3 && !enWB && !enPeel;
   const noHide = b.cls==="A" && !diveOpen && (map.open===2 || nSnip>=2);
-  enemies.forEach(en=>{const e=get(en);let c=counter(b,e); if(noHide&&(e.cls==="M"||e.range===3)) c=Math.min(c,0)-.3;s+=c*plan.counterW;
+  // Tanks kommen in Knockout/Bounty schwer an die Gegner heran: Konter-Vorteile zählen nur halb
+  const tankOpen = b.cls==="T" && ["ko","bounty"].includes(map.mode);
+  enemies.forEach(en=>{const e=get(en);let c=counter(b,e); if(noHide&&(e.cls==="M"||e.range===3)) c=Math.min(c,0)-.3; if(tankOpen&&c>0) c*=.5; s+=c*plan.counterW;
     const v=VS[b.name+"|"+e.name], tag=v?` (${v[0]>0?"+":""}${Math.round(v[0]*100)}%)`:"";
     const dataNeg=v&&v[0]<=-.01, dataPos=v&&v[0]>=.01;
     if(c>=1&&!dataNeg){countered++;why.push(["+","kontert "+e.name+tag])} else if(c<=-.8&&!dataPos)why.push(["-","schwach gegen "+e.name+tag]);});
@@ -665,6 +688,20 @@ function score(name,map,mates,enemies,slot,team){
       if(wb&&map.walls<=1){s-=1;why.push(["-","Gegner haben Wallbreak"])}
     }
   } else if(shortR&&map.open===2&&slot>=2&&slot<=3){s-=1;why.push(["-","ohne Reichweite auf offener Map"])}
+  // Zwei Werfer nur als eigener Last Pick und nur, wenn die Gegner keinen Assassinen haben
+  // Mr. P zählt als werfer-ähnlich nur halb
+  if(lobby(b)&&tm.some(lobby)){
+    const o=tm.find(lobby), half=!isThrower(b)||!isThrower(o), other=o.name, enA=enB.find(e=>e.cls==="A");
+    const lbl=half?"werfer-ähnliches Duo":"zweiter Werfer";
+    if(plan.later>0){s-=half?3:6;why.unshift(["-",`${lbl} mit ${other}: Gegner können mit Assassine kontern`])}
+    else if(enA){s-=half?2.5:5;why.unshift(["-",`${lbl} mit ${other}, Gegner haben ${enA.name}`])}
+    else why.push(["+",`${lbl} möglich: Gegner haben keinen Assassinen`]);
+  }
+  // Mr. P braucht einen Partner mit mittlerer Range oder viel HP, der Druck macht, damit er seine Super lädt
+  if(b.name==="Mr. P"&&tm.length&&!tm.some(holdsSpace)){
+    s-=tm.length===2?1.5:.6; why.push(["-","Mr. P braucht einen Partner mit mittlerer Range oder viel HP"]) }
+  if(holdsSpace(b)&&tm.some(t=>t.name==="Mr. P")&&!tm.some(holdsSpace)){
+    s+=.8; why.push(["+","hält Mr. P den Raum frei"]) }
   // Gegner mit wenig Schaden: Ein Tank mit viel HP kommt durch, mit Max (Speed) oder Heiler noch besser
   const lowDps=enB.filter(e=>dps(e)<=1.5&&!inL(TANK_KILLERS,e)&&!e.tags.includes("at"));
   const enDone=enemies.length===3, sup=tm.filter(t=>t.tags.includes("h")||t.name==="Max");
@@ -846,8 +883,39 @@ function renderDraft(){
     const stl=parts.length?`<span class="stl">${parts.join(" · ")}</span>`:"";
     return `<button class="s" data-take="${esc(x.name)}"><span class="rk">${i+1}</span><span class="main" style="min-width:0"><span class="nm">${esc(x.name)}<span class="cls">${CLS[x.b.cls]}</span></span>${stl}<span class="rs">${rs}</span><span class="bar"><i style="width:${barW}%"></i></span></span><span class="sc">${x.s.toFixed(1)}</span></button>`}).join("")+`</div>`;
 }
+// ---------- Verlauf ----------
+function recordDraft(){ // fertigen Draft speichern bzw. aktualisieren, wenn ein Pick geändert wurde
+  const map=curMap(), mt=myTeam();
+  if(!map||!mt||S.picks.some(p=>!p)) return;
+  const mine=S.picks.filter((_,i)=>ORDER[i]===mt), en=S.picks.filter((_,i)=>ORDER[i]!==mt);
+  let old=HIST.find(h=>h.id===S.did);
+  // Ohne „Neuer Draft“ neu eingetragen (kaum Picks gleich): als eigener Eintrag speichern statt den alten zu überschreiben
+  if(old&&(old.map!==map.name||old.picks.filter((p,i)=>p===S.picks[i]).length<3)){S.did=newId();old=null}
+  const e={id:S.did,t:old?old.t:Date.now(),map:map.name,mode:map.mode,pos:S.pos,bans:[...S.bans],picks:[...S.picks],
+    wp:MD?winProb(mine,en,map):null,res:old?old.res:null};
+  if(old&&JSON.stringify(old)===JSON.stringify(e)) return;
+  HIST=[e].concat(HIST.filter(h=>h.id!==e.id)).sort((a,b)=>b.t-a.t).slice(0,30); store.set("hist",HIST);
+}
+function renderHist(){
+  const w=HIST.filter(h=>h.res==="w").length, l=HIST.filter(h=>h.res==="l").length;
+  $("hist-n").textContent=HIST.length?`(${HIST.length}${w+l?` · ${w} ${w===1?"Sieg":"Siege"}, ${l} ${l===1?"Niederlage":"Niederlagen"}`:""})`:"";
+  if(!HIST.length){$("histlist").innerHTML=`<div class="sub">Noch kein Draft gespeichert. Sobald alle 6 Picks eingetragen sind, landet der Draft hier.</div>`;return}
+  const dt=t=>new Date(t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("histlist").innerHTML=HIST.map(h=>{
+    const mt=ORDER[h.pos-1], mine=h.picks.filter((_,i)=>ORDER[i]===mt), en=h.picks.filter((_,i)=>ORDER[i]!==mt);
+    const wp=h.wp==null?"":`${Math.round(h.wp*100)} %`;
+    const res=h.res==="w"?`<span class="win">Sieg</span>`:h.res==="l"?`<span class="loss">Niederlage</span>`:"";
+    return `<details class="h"${h.id===S.did?" open":""}><summary><span class="hm m-${h.mode}">${MODES[h.mode]}</span><b>${esc(h.map)}</b><span class="sub">${dt(h.t)} · Pick ${h.pos}</span>
+      <span class="hr">${res||(wp?`<span class="sub">Chance</span> ${wp}`:"")}</span></summary>
+      <div class="tm"><span class="sub">Dein Team:</span> ${mine.map(esc).join(", ")}</div>
+      <div class="tm"><span class="sub">Gegner:</span> ${en.map(esc).join(", ")}</div>
+      ${h.bans.length?`<div class="tm"><span class="sub">Eure Bans:</span> ${h.bans.map(esc).join(", ")}</div>`:""}
+      ${wp?`<div class="tm"><span class="sub">Gewinnchance laut Modell:</span> ${wp}</div>`:""}
+      <div class="acts"><button class="btn ghost" data-hres="${h.id}" data-r="w" aria-pressed="${h.res==="w"}">Gewonnen</button><button class="btn ghost" data-hres="${h.id}" data-r="l" aria-pressed="${h.res==="l"}">Verloren</button>
+      <button class="btn ghost" data-hopen="${h.id}">Im Draft öffnen</button><button class="btn ghost" data-hdel="${h.id}">Löschen</button></div></details>`}).join("");
+}
 function render(){
-  renderMaps(); renderOrder(); renderBans(); renderDraft(); save();
+  renderMaps(); renderOrder(); renderBans(); renderDraft(); recordDraft(); renderHist(); save();
 }
 
 // ---------- Events ----------
@@ -864,7 +932,10 @@ document.addEventListener("click",e=>{
   if(d.clear!=null){S.picks[+d.clear]=null;render();return}
   if(d.pool!=null){t.checked?disabled.delete(d.pool):disabled.add(d.pool);store.set("disabled",[...disabled]);renderMaps();return}
   if(d.delmap){e.preventDefault();customMaps=customMaps.filter(m=>m.name!==d.delmap);store.set("custom",customMaps);if(S.map===d.delmap)S.map=null;render();return}
-  if(t.id==="reset"){S.bans=[];S.picks=[null,null,null,null,null,null];render();return}
+  if(t.id==="reset"){S.bans=[];S.picks=[null,null,null,null,null,null];S.did=newId();render();return}
+  if(d.hres){const h=HIST.find(x=>x.id===d.hres); if(h){h.res=h.res===d.r?null:d.r; store.set("hist",HIST); renderHist()} return}
+  if(d.hdel){HIST=HIST.filter(x=>x.id!==d.hdel); store.set("hist",HIST); if(S.did===d.hdel)S.did=newId(); renderHist(); return}
+  if(d.hopen){const h=HIST.find(x=>x.id===d.hopen); if(h&&allMaps().some(m=>m.name===h.map)){Object.assign(S,{map:h.map,pos:h.pos,bans:[...h.bans],picks:[...h.picks],did:h.id}); render(); $("s-draft").scrollIntoView({behavior:"smooth"})} else toast("Map nicht mehr im Pool"); return}
 });
 document.addEventListener("input",e=>{if(e.target.dataset.kind)fillPicker(e.target.dataset.kind,e.target.value)});
 document.addEventListener("keydown",e=>{
