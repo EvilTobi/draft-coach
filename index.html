@@ -430,7 +430,7 @@ let HIST = store.get("hist",[]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611222020"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611222033"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -577,7 +577,8 @@ const COUNTERED_BY = {
  "Bibi":["Melodie"], // nach Melodies Super gehen Bibis Schläge ins Leere (Nutzer)
  "Melodie":["Otis"],
  "Squeak":["Mortis","Edgar","Kenji","Melodie","Leon","Shade"], // aktuell Meta, aber Assassinen kontern ihn (Nutzer)
- "El Primo":["Sirius"], "Surge":["Sirius"], // Sirius-Geister gegen Tanks und Surge (Nutzer)
+ "El Primo":["Sirius"],
+ "Ash":["Griff","Emz","El Primo","Colette"], // Nutzer: Griff, Emz, Primo kontern Ash "Surge":["Sirius"], // Sirius-Geister gegen Tanks und Surge (Nutzer)
  "Jae-yong":["Frank","Ollie","Bull","Doug"],
  "Bea":["Mr. P","Charlie","Barley","Tick","Sprout"],
  "Shade":["Jacky","Frank","Shelly"],
@@ -614,7 +615,8 @@ const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
 const MRP_PREY = ["Piper","Belle","Mandy","Angelo","Bea","Brock","Nani"];
 // Einzelschuss-Brawler: Ashs Ratten (Super) fangen ihre Schüsse ab (Nutzer: Surge, Meeple, Gus …)
-const ASH_PREY = ["Surge","Meeple","Gus","Squeak","Piper","Belle","Brock","Mandy","Angelo","Bea","Byron","Nani"];
+// Squeak nicht: seine Explosion trifft alle Ratten auf einmal (Nutzer)
+const ASH_PREY = ["Surge","Meeple","Gus","Piper","Belle","Brock","Mandy","Angelo","Bea","Byron","Nani"];
 const isThrower = b => b.cls==="R"; // echte Werfer (Artillerie), inkl. Ziggy, Willow, Berry (Hauptangriff wie Barley)
 const lobby = b => isThrower(b) || b.name==="Mr. P"; // Mr. P ist Controller, aber werfer-ähnlich (über Wände, anfällig für Assassinen)
 const holdsSpace = b => b.cls==="T" || (b.range===2 && ["D","A"].includes(b.cls)); // mittlere Range oder viel HP (füttern Mr. Ps Super)
@@ -830,14 +832,14 @@ function score(name,map,mates,enemies,slot,team){
     if(mp.length&&slot>=3){ s+=Math.min(7,4+1.5*(mp.length-1))+(slot===5&&mp.length>=2?3.5:0); why.unshift(["+",`${mp.map(e=>e.name).join(" und ")} ${mp.length>1?"laden":"lädt"} Gigis Super schnell auf (viele Projektile)`]) }
     else { s-=3; why.push(["-","Gigi erst ab Pick 4 gegen Brawler mit vielen Projektilen"]) } }
   // Werfer früh (Pick 1–3): Assassinen sind noch frei und kontern ihn (Nutzer). Mr. P nur leicht. Ausnahme: Map-Bonus (Juju auf Parallel Plays)
-  if(lobby(b)&&slot<=2&&!(MAP_BONUS[map.name]||{})[b.name]){
+  if(lobby(b)&&b.name!=="Mr. P"&&slot<=2&&!(MAP_BONUS[map.name]||{})[b.name]){
     const u=used(), freeA=NAMES.filter(n=>!u.has(n.toLowerCase())).map(get).filter(x=>x.cls==="A"&&x.meta>=7);
     if(freeA.length){ const pen=(1+.5*Math.min(3,freeA.length))*(!isThrower(b)?.25:b.name==="Willow"?.5:1); s-=pen;
       if(pen>=1) why.unshift(["-",`Werfer erst später: ${freeA.slice(0,3).map(x=>x.name).join(", ")}${freeA.length>3?" …":""} noch frei`]) }
   }
   // Tank an Pick 4/5, Gegner haben noch den Last Pick: freie harte Tank-Konter bestrafen ihn (Nutzer: Colette gegen Frank).
   // Mit einem zweiten Tank im Team halb so schlimm (Nutzer: „zu viel HP für Colette“). Frank hat eigene Regel.
-  if(b.cls==="T"&&b.name!=="Frank"&&(slot===3||slot===4)&&plan.later>0){
+  if(b.cls==="T"&&b.name!=="Frank"&&b.name!=="Ash"&&(slot===3||slot===4)&&plan.later>0){
     const u=used(), free=TANK_HARD.filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
     if(free.length){ const pen=(free.length>=2?3.5:2)*(tm.some(t=>t.cls==="T")?.5:1); s-=pen;
       why.unshift(["-",`Gegner-Last-Pick: ${free.slice(0,3).join(", ")}${free.length>3?" …":""} ${free.length>1?"kontern":"kontert"} Tanks`]) }
@@ -846,6 +848,15 @@ function score(name,map,mates,enemies,slot,team){
   if(b.name==="Ash"){ const pr=enB.filter(e=>inL(ASH_PREY,e));
     if(pr.length){ const v=Math.min(6,3+1.5*(pr.length-1))*(["gem","ball"].includes(map.mode)?1:.5); s+=v;
       why.unshift(["+",`Ashs Ratten blocken die Einzelschüsse von ${pr.map(e=>e.name).join(" und ")}`]) } }
+  // Ash und Mr. P: Wie viele ihrer harten Konter sind noch frei, solange die Gegner noch picken? (Nutzer)
+  // Viele frei = deutlich schlechter; alle gebannt/gepickt = Vorteil
+  if((b.name==="Ash"||b.name==="Mr. P")&&plan.later>0){
+    const u=used(), free=(COUNTERED_BY[b.name]||[]).filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n)), w=slot===0?.35:1;
+    // Gewicht je Konter nach aktueller Stärke (Meta): ein offener Edgar wiegt mehr als ein selten gespielter Fang
+    const pen=free.reduce((a,n)=>a+1.6*Math.max(.3,Math.min(1.5,(get(n).meta-3)/4)),0);
+    if(free.length){ s-=Math.min(6,pen)*w; why.unshift(["-",`${free.slice(0,3).join(", ")}${free.length>3?" …":""} noch frei: ${free.length>1?"kontern":"kontert"} ${b.name}`]) }
+    else { s+=1.5*w; why.unshift(["+",`alle harten Konter von ${b.name} sind gebannt oder gepickt`]) }
+  }
   // Hank braucht Wände: gegnerischer Wallbreak nimmt ihm die Deckung (Nutzer)
   if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak: Hank verliert seine Deckung`]) }
     // Nutzer: kein Hank, solange Griff, Frank oder Colette noch frei sind und die Gegner noch picken
@@ -853,7 +864,7 @@ function score(name,map,mates,enemies,slot,team){
     if(plan.later>0&&fh.length){ s-=3; why.unshift(["-",`${fh.join(", ")} noch frei: kontern Hank`]) } }
   // Antwort-Risiko: Ist ein starker Konter noch frei, den die Gegner direkt danach picken können?
   if(plan.later>=1&&slot>0){
-    const u=used(), cand=(COUNTERED_BY[b.name]||[]).concat(inL(MRP_PREY,b)?["Mr. P"]:[]);
+    const u=used(), cand=["Ash","Mr. P"].includes(b.name)?[]:(COUNTERED_BY[b.name]||[]).concat(inL(MRP_PREY,b)?["Mr. P"]:[]);
     const hit=cand.find(n=>!u.has(n.toLowerCase())&&NAMES.includes(n)&&(get(n).meta>=7.5||n==="Mr. P"));
     if(hit){ s-=get(hit).meta>=8?1.5:.8; why.push(["-",`${hit} ist noch frei und kontert ${b.name}`]) }
   }
