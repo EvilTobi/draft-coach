@@ -192,7 +192,7 @@ footer{font-size:12px;color:var(--muted)}
       <div class="sub">Map wählen · Position wählen · bannen · picken</div>
       <div class="share" style="margin-top:10px"><button class="btn" id="share" type="button" style="white-space:nowrap">App teilen</button><span class="sub" id="install-hint"></span></div>
     </div>
-    <div class="note"><b>Ranked Season 51 · seit 19.11.2026.</b> Map-Pool und Trial-Brawler (Frank, Mico, Spike, Bonnie, Max, Amber) laut Brawl Stars Fandom-Wiki. Statistiken: <b>Pro 40 % · Masters III 35 % · Masters I+II 25 %</b> aus DraftMeta, Brawl Atlas, Corestats, BrawlLab und BrawlPick. <span id="data-stand"></span></div>
+    <div class="note"><b>Ranked Season 51 · seit 19.11.2026.</b> Map-Pool und Trial-Brawler (Frank, Mico, Spike, Bonnie, Max, Amber) laut Brawl Stars Fandom-Wiki. Statistiken: <b>Pro 40 % · Masters III 35 % · Masters I+II 25 %</b> aus DraftMeta, Brawl Atlas, Corestats, BrawlLab und BrawlPick. <span id="data-stand"></span> <span id="app-ver"></span></div>
   </header>
 
   <section id="s-map">
@@ -430,6 +430,7 @@ let HIST = store.get("hist",[]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
+const APP_VERSION = "202611221543"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -1092,6 +1093,14 @@ render();
 
 // ---------- Datenstand ----------
 try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstand ${ST.generated}`+(so.draftmeta?` · ${(so.draftmeta.drafts.m12+so.draftmeta.drafts.m3+so.draftmeta.drafts.pro).toLocaleString("de-DE")} Masters+-Drafts`:"")+(so.corestats?` · ${so.corestats.sets.toLocaleString("de-DE")} Pro-Scrims`:"")+".":""}catch(e){}
+// ---------- App-Version + Update-Check ----------
+const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
+$("app-ver").textContent=`App-Version ${fmtVer(APP_VERSION)}.`;
+if(navigator.onLine!==false) fetch("sw.js?check="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+  const m=/const VERSION = "draft-coach-(\d+)"/.exec(t||""); if(!m||m[1]<=APP_VERSION) return;
+  const el=$("app-ver"); el.innerHTML=`App-Version ${fmtVer(APP_VERSION)} · <b>Neue Version ${fmtVer(m[1])} verfügbar</b> – <a href="#" id="app-reload">jetzt laden</a> (oder App ganz schließen und neu öffnen).`;
+  $("app-reload").addEventListener("click",ev=>{ev.preventDefault();(navigator.serviceWorker&&navigator.serviceWorker.getRegistration?navigator.serviceWorker.getRegistration().then(g=>g&&g.update()).catch(()=>{}):Promise.resolve()).then(()=>setTimeout(()=>location.reload(),600))});
+}).catch(()=>{});
 // ---------- Web-App: Teilen, Installieren, Offline ----------
 function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
 $("share").addEventListener("click",async()=>{

@@ -1,5 +1,5 @@
 // Offline-Cache. VERSION bei jedem Update erhöhen, damit alle Geräte die neue Fassung laden.
-const VERSION = "draft-coach-202611221537";
+const VERSION = "draft-coach-202611221543";
 const CORE = [
   "./",
   "index.html",
@@ -42,6 +42,8 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
+  // Versions-Check der App: immer frisch aus dem Netz, nie aus dem Cache
+  if (new URL(req.url).pathname.endsWith("/sw.js")) return;
   // Seite selbst: erst Netz (für Updates), sonst Cache
   if (req.mode === "navigate") {
     e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(VERSION).then(x => x.put("index.html", c)); return r; })

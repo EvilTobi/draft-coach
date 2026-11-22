@@ -12,6 +12,8 @@ Draft-Hilfe für Brawl Stars Ranked (Deutsch). Statische PWA, live unter https:/
   Skill der höchsten vorhandenen. Nur bei < 300 Masters-Spielen: `ATLAS_FALLBACK=<data.json>` oder bisheriges Modell.
 - Nutzer-Wunsch: kaum Daten vor der letzten Balance-Änderung (zuletzt 11.11.2026). DraftMeta 7 Tage, Corestats 9 Tage.
 - `sw.js` – Offline-Cache. **Bei jeder Änderung `VERSION` erhöhen**, sonst bekommen installierte Apps das Update nicht.
+  `APP_VERSION` in `index.html` immer gleich halten (Zeitstempel ohne `draft-coach-`): wird im Hinweis-Kasten als
+  „App-Version“ angezeigt; die App lädt `sw.js` frisch (SW lässt sie durch) und meldet „Neue Version verfügbar“.
 - `manifest.webmanifest`, `icons/`, `maps/*.webp` (Map-Bilder aus dem Fandom-Wiki).
 
 ## Ranked-Kontext (Stand 19.11.2026, Season 51)

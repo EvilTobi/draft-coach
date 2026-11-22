@@ -340,7 +340,13 @@ with open(OUT, "w", encoding="utf-8") as f:
     f.write("// Automatisch erzeugt von scripts/update_data.py – nicht von Hand bearbeiten.\n")
     f.write("window.STATS = " + json.dumps(stats, ensure_ascii=False, separators=(",", ":")) + ";\n")
 # Offline-Cache-Version erhöhen, damit installierte Apps die neuen Daten laden
+ver = f"{datetime.datetime.now(datetime.timezone.utc):%Y%m%d%H%M}"
 sw = open(SW, encoding="utf-8").read()
-sw = re.sub(r'const VERSION = "[^"]*";', f'const VERSION = "draft-coach-{datetime.datetime.now(datetime.timezone.utc):%Y%m%d%H%M}";', sw)
+sw = re.sub(r'const VERSION = "[^"]*";', f'const VERSION = "draft-coach-{ver}";', sw)
 open(SW, "w", encoding="utf-8").write(sw)
+# App-Version in index.html gleich halten (Anzeige „App-Version“ + Update-Hinweis)
+IDX = os.path.join(ROOT, "index.html")
+idx = open(IDX, encoding="utf-8").read()
+idx = re.sub(r'const APP_VERSION = "[^"]*";', f'const APP_VERSION = "{ver}";', idx)
+open(IDX, "w", encoding="utf-8").write(idx)
 log(f"Fertig: {OUT} ({os.path.getsize(OUT) // 1024} KB) · {len(brawlers)} Brawler · {len(VS)} Matchups · {len(SYN)} Kombis")
