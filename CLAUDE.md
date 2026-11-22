@@ -77,8 +77,14 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Lou auf Maps mit Wänden kaum Schutz vor Assassinen; starke Assassinen dort als Last-Pick-Ban (Team A).
   Assassinen an Pick 4/5 vor Gegner-Last-Pick: Bounty wie Knockout. Spieltipps `PLAY_TIPS` (Trunk>Mico, Colette>Bibi),
   Lou + Berry Zonen-Tipp, Heist mit 2 schnellen Brawlern: beide auf den Safe. Ash gegen Einzelschuss-Brawler (`ASH_PREY`: Surge, Meeple, Gus …; nicht Squeak, Explosion trifft alle Ratten) weit oben,
-  v. a. Gem Grab/Brawl Ball. Ash und Mr. P: solange Gegner noch picken, Abzug je freiem harten Konter (`COUNTERED_BY`,
-  gewichtet nach Meta, max. −6; First Pick ×0,35), alle weg = +1,5. Ash-Konter: Griff, Emz, El Primo, Colette.
+  v. a. Gem Grab/Brawl Ball. Ash-Konter: Griff, Emz, El Primo, Colette (Ash nicht in der allgemeinen Tank-Regel).
+- Offene Konter für ALLE Brawler (`hardC`, `freeCounters`): solange Gegner noch picken, Abzug für freie harte Konter
+  (Matchup-Daten ab 150 Spielen, sonst Atlas-Modell, plus `COUNTERED_BY`/`MRP_PREY`/`FRANK_HARD`; ab 0,8 = harter Konter,
+  gewichtet nach Meta des Konters). Bester freier Konter zählt ×1,5, die nächsten 3 je ×0,35, max. −7; First Pick ×0,35.
+  Alle harten Konter gebannt/gepickt = +1,5. Ersetzt das alte „X ist noch frei“-Antwort-Risiko.
+  Dünne Daten (Nutzer ergänzt ggf. `COUNTERED_BY`): Sam, Lola, Pam, Jacky, Ollie, Janet, Sandy, Ziggy, Clancy, Glowy, Larry & Lawrie.
+- Export „Neu seit letztem Export“ (`EXPMARK` in localStorage `rdc-expmark`): nur neue oder geänderte Drafts (Ergebnis/Notiz),
+  geänderte mit „AKTUALISIERT“. Jeder Export markiert die enthaltenen Drafts.
   Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.
   Bibi>Melodie/Frank>Meeple-Tipps bewusst nicht
   (Nutzer: Seite nicht überladen, Draft am iPad muss schnell gehen).

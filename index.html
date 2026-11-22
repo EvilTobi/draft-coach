@@ -238,7 +238,7 @@ footer{font-size:12px;color:var(--muted)}
     </div>
     <details id="hist"><summary>Letzte Drafts <span class="sub" id="hist-n"></span></summary>
       <div class="sub" style="margin:6px 0 8px">Jeder fertige Draft wird hier automatisch gespeichert (nur auf diesem Gerät, die letzten 30).</div>
-      <div class="acts" id="hist-exp" style="margin-bottom:8px"><button class="btn ghost" data-hexp="today">Heute kopieren</button><button class="btn ghost" data-hexp="all">Alle kopieren</button></div>
+      <div class="acts" id="hist-exp" style="margin-bottom:8px"><button class="btn" data-hexp="new">Neu seit letztem Export</button><button class="btn ghost" data-hexp="today">Heute kopieren</button><button class="btn ghost" data-hexp="all">Alle kopieren</button></div>
       <textarea id="hist-out" rows="6" readonly hidden style="width:100%;font-size:12px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px"></textarea>
       <div id="histlist"></div>
     </details>
@@ -427,10 +427,13 @@ const save = () => store.set("state",S);
 const newId = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 if(!S.did) S.did=newId();
 let HIST = store.get("hist",[]);
+// Export-Markierung: Stand jedes Drafts beim letzten Export (neu oder geändert = Ergebnis/Notiz/Picks anders)
+let EXPMARK = store.get("expmark",{});
+const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611222033"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611222045"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -669,6 +672,21 @@ function counter(b,e){ // Vorteil von b gegen Gegner e
   s+=modelPair(b.name,e.name)*10;
   return s;
 }
+// Wie hart kontert e den Brawler b? Nur Matchup-Daten (Scrims, BrawlLab, BrawlPick), Brawl-Atlas-Modell und Nutzer-Listen,
+// ohne Klassen-Faustregeln (die stecken schon im Team-Check). Ab ~0,8 gilt e als harter Konter. Ergebnis gemerkt.
+const HC={};
+function hardC(e,b){ const k=e+"|"+b; if(k in HC) return HC[k];
+  let c=0; if((COUNTERED_BY[b]||[]).includes(e)) c+=1.6; if(e==="Mr. P"&&MRP_PREY.includes(b)) c+=1.6;
+  if(b==="Frank"&&FRANK_HARD.includes(e)) c+=1.2;
+  // Matchup-Daten erst ab 150 Spielen, sonst Modell (kleine Stichproben schwanken stark)
+  const v=VS[k], w=VS[b+"|"+e], cl=x=>Math.max(-2.5,Math.min(2.5,x));
+  if(v&&v[1]>=150) c+=cl(v[0]*10); else if(w&&w[1]>=150) c-=cl(w[0]*10); else c+=cl(modelPair(e,b)*10);
+  return HC[k]=c }
+// Wie viele harte Konter von b sind noch frei? Gewicht nach aktueller Stärke (Meta) des Konters
+function freeCounters(b,u){ const out=[];
+  for(const n of NAMES){ if(n===b) continue; const c=hardC(n,b); if(c<.8) continue;
+    const wt=Math.max(.3,Math.min(1.5,(get(n).meta-3)/4)); out.push({n,c,wt,free:!u.has(n.toLowerCase()),v:Math.min(2.5,c)*wt}) }
+  return out.sort((x,y)=>y.v-x.v) }
 // Wie verwundbar ist ein Team? Werte 0 (abgesichert) bis ~1.5 (sehr anfällig). Skaliert auf Teamgröße.
 function threats(team,map){
   const n=team.length; if(!n) return {A:0,R:0,T:0};
@@ -848,25 +866,20 @@ function score(name,map,mates,enemies,slot,team){
   if(b.name==="Ash"){ const pr=enB.filter(e=>inL(ASH_PREY,e));
     if(pr.length){ const v=Math.min(6,3+1.5*(pr.length-1))*(["gem","ball"].includes(map.mode)?1:.5); s+=v;
       why.unshift(["+",`Ashs Ratten blocken die Einzelschüsse von ${pr.map(e=>e.name).join(" und ")}`]) } }
-  // Ash und Mr. P: Wie viele ihrer harten Konter sind noch frei, solange die Gegner noch picken? (Nutzer)
-  // Viele frei = deutlich schlechter; alle gebannt/gepickt = Vorteil
-  if((b.name==="Ash"||b.name==="Mr. P")&&plan.later>0){
-    const u=used(), free=(COUNTERED_BY[b.name]||[]).filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n)), w=slot===0?.35:1;
-    // Gewicht je Konter nach aktueller Stärke (Meta): ein offener Edgar wiegt mehr als ein selten gespielter Fang
-    const pen=free.reduce((a,n)=>a+1.6*Math.max(.3,Math.min(1.5,(get(n).meta-3)/4)),0);
-    if(free.length){ s-=Math.min(6,pen)*w; why.unshift(["-",`${free.slice(0,3).join(", ")}${free.length>3?" …":""} noch frei: ${free.length>1?"kontern":"kontert"} ${b.name}`]) }
-    else { s+=1.5*w; why.unshift(["+",`alle harten Konter von ${b.name} sind gebannt oder gepickt`]) }
-  }
   // Hank braucht Wände: gegnerischer Wallbreak nimmt ihm die Deckung (Nutzer)
   if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak: Hank verliert seine Deckung`]) }
     // Nutzer: kein Hank, solange Griff, Frank oder Colette noch frei sind und die Gegner noch picken
     const u=used(), fh=["Griff","Frank","Colette"].filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
     if(plan.later>0&&fh.length){ s-=3; why.unshift(["-",`${fh.join(", ")} noch frei: kontern Hank`]) } }
-  // Antwort-Risiko: Ist ein starker Konter noch frei, den die Gegner direkt danach picken können?
-  if(plan.later>=1&&slot>0){
-    const u=used(), cand=["Ash","Mr. P"].includes(b.name)?[]:(COUNTERED_BY[b.name]||[]).concat(inL(MRP_PREY,b)?["Mr. P"]:[]);
-    const hit=cand.find(n=>!u.has(n.toLowerCase())&&NAMES.includes(n)&&(get(n).meta>=7.5||n==="Mr. P"));
-    if(hit){ s-=get(hit).meta>=8?1.5:.8; why.push(["-",`${hit} ist noch frei und kontert ${b.name}`]) }
+  // Antwort-Risiko für alle Brawler (Nutzer): Solange die Gegner noch picken, zählt jeder freie harte Konter als Abzug,
+  // gewichtet nach Stärke des Konters. Sind alle harten Konter gebannt/gepickt, gibt es einen Bonus. First Pick nur 35 %
+  // (dort steckt das Risiko schon im First-Pick-Wert).
+  if(plan.later>0){
+    const fc=freeCounters(b.name,used()), fr=fc.filter(x=>x.free), w=slot===0?.35:1;
+    if(fr.length){ // Die Gegner brauchen nur einen Konter: der beste freie zählt voll, weitere nur wenig
+      const pen=Math.min(7,1.5*fr[0].v+.35*fr.slice(1,4).reduce((a,x)=>a+x.v,0))*w; s-=pen;
+      if(pen>=.5) why.push(["-",`${fr.slice(0,3).map(x=>x.n).join(", ")}${fr.length>3?" …":""} noch frei: ${fr.length>1?"kontern":"kontert"} ${b.name}`]) }
+    else if(fc.length>=2){ s+=1.5*w; why.push(["+",`alle harten Konter von ${b.name} sind gebannt oder gepickt`]) }
   }
   // Position
   if(slot===0){
@@ -1056,15 +1069,18 @@ function recordDraft(){ // fertigen Draft speichern bzw. aktualisieren, wenn ein
 // Export als Text zum Einfügen in den Chat: Draft, Ergebnis, Notiz und was der Coach bei jedem eigenen Pick vorschlägt
 function exportHist(which){
   const today=new Date().toDateString();
-  const list=HIST.filter(h=>which==="all"||new Date(h.t).toDateString()===today).slice().reverse();
+  const list=HIST.filter(h=>which==="all"||(which==="new"?EXPMARK[h.id]!==histSig(h):new Date(h.t).toDateString()===today)).slice().reverse();
+  if(which==="new"&&!list.length) return "";
+  const wasExp=new Set(list.filter(h=>EXPMARK[h.id]).map(h=>h.id));
+  list.forEach(h=>EXPMARK[h.id]=histSig(h)); store.set("expmark",EXPMARK);
   const keep={map:S.map,bans:S.bans,picks:S.picks};
   const why=r=>r.why.slice(0,6).map(w=>(w[0]==="t"?"":w[0])+w[1]).join("; ")||"keine besonderen Stärken laut Coach";
   const lv=v=>v<.35?"gut":v<.8?"mittel":"schwach";
-  const out=[`Draft-Coach-Export ${new Date().toLocaleString("de-DE")} · ${which==="all"?"alle":"heute"} (${list.length}) · Daten ${ST.generated||"?"}`,
+  const out=[`Draft-Coach-Export ${new Date().toLocaleString("de-DE")} · ${which==="all"?"alle":which==="new"?"neu seit letztem Export":"heute"} (${list.length}) · Daten ${ST.generated||"?"}`,
     `Bilanz: ${list.filter(h=>h.res==="w").length} Siege, ${list.filter(h=>h.res==="l").length} Niederlagen, ${list.filter(h=>!h.res).length} ohne Ergebnis`];
   list.forEach((h,k)=>{
     const map=allMaps().find(m=>m.name===h.map), mt=ORDER[h.pos-1];
-    out.push("",`## ${k+1}) ${new Date(h.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · ${MODES[h.mode]} · ${h.map} · eigene Position ${h.pos} (Team ${mt}) · ${h.res==="w"?"SIEG":h.res==="l"?"NIEDERLAGE":"Ergebnis offen"}${h.wp!=null?` · Modell ${Math.round(h.wp*100)} %`:""}`);
+    out.push("",`## ${k+1}) ${new Date(h.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · ${MODES[h.mode]} · ${h.map} · eigene Position ${h.pos} (Team ${mt}) · ${h.res==="w"?"SIEG":h.res==="l"?"NIEDERLAGE":"Ergebnis offen"}${h.wp!=null?` · Modell ${Math.round(h.wp*100)} %`:""}${wasExp.has(h.id)?" · AKTUALISIERT (schon einmal exportiert)":""}`);
     out.push(`Picks: ${h.picks.map((p,i)=>`${i+1}${ORDER[i]===mt?(i===h.pos-1?"*":"+"):"-"} ${p}`).join(" | ")}   (* du, + Teammate, - Gegner)`);
     out.push(`Eigene Bans: ${h.bans.join(", ")||"–"}${h.liveBans?` · Ban-Vorschläge damals: ${h.liveBans.join(", ")}`:""}`);
     if(h.note) out.push(`Notiz: ${h.note.replace(/\s+/g," ")}`);
@@ -1126,7 +1142,7 @@ document.addEventListener("click",e=>{
   if(d.pool!=null){t.checked?disabled.delete(d.pool):disabled.add(d.pool);store.set("disabled",[...disabled]);renderMaps();return}
   if(d.delmap){e.preventDefault();customMaps=customMaps.filter(m=>m.name!==d.delmap);store.set("custom",customMaps);if(S.map===d.delmap)S.map=null;render();return}
   if(t.id==="reset"){S.bans=[];S.picks=[null,null,null,null,null,null];S.did=newId();S.live=null;S.liveBans=null;render();return}
-  if(d.hexp){const txt=exportHist(d.hexp), o=$("hist-out"); o.value=txt; o.hidden=false;
+  if(d.hexp){const txt=exportHist(d.hexp), o=$("hist-out"); if(!txt){toast("Nichts Neues seit dem letzten Export");return} o.value=txt; o.hidden=false;
     (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Kopiert: jetzt im Chat einfügen")).catch(()=>{o.focus();o.select();toast("Text markiert: bitte kopieren")}); return}
   if(d.hres){const h=HIST.find(x=>x.id===d.hres); if(h){h.res=h.res===d.r?null:d.r; store.set("hist",HIST); renderHist()} return}
   if(d.hdel){HIST=HIST.filter(x=>x.id!==d.hdel); store.set("hist",HIST); if(S.did===d.hdel)S.did=newId(); renderHist(); return}
