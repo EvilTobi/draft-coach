@@ -319,7 +319,7 @@ Mandy|M|3||8
 R-T|D|3||8
 Willow|C|2|k|6.5
 Maisie|M|3|at|7
-Hank|T|1|w|6.5
+Hank|T|1||6.5
 Cordelius|A|2||6.5
 Doug|S|1|h|6
 Pearl|D|2||6.5
@@ -796,8 +796,8 @@ function score(name,map,mates,enemies,slot,team){
   // Gigi: Gegner mit vielen Projektilen laden ihre Super schnell auf
   // nur als 5. oder Last Pick weit oben, wenn die Gegner mindestens einen passenden Brawler haben
   if(b.name==="Gigi"){ const mp=enB.filter(e=>inL(MULTI_PROJ,e));
-    if(mp.length&&slot>=4){ s+=Math.min(4.5,2.5+mp.length); why.unshift(["+",`${mp.map(e=>e.name).join(" und ")} ${mp.length>1?"laden":"lädt"} Gigis Super schnell auf (viele Projektile)`]) }
-    else { s-=3; why.push(["-","Gigi erst als 5. oder Last Pick gegen Brawler mit vielen Projektilen"]) } }
+    if(mp.length&&slot>=3){ s+=Math.min(7,4+1.5*(mp.length-1))+(slot===5&&mp.length>=2?3.5:0); why.unshift(["+",`${mp.map(e=>e.name).join(" und ")} ${mp.length>1?"laden":"lädt"} Gigis Super schnell auf (viele Projektile)`]) }
+    else { s-=3; why.push(["-","Gigi erst ab Pick 4 gegen Brawler mit vielen Projektilen"]) } }
   // Antwort-Risiko: Ist ein starker Konter noch frei, den die Gegner direkt danach picken können?
   if(plan.later>=1&&slot>0){
     const u=used(), cand=(COUNTERED_BY[b.name]||[]).concat(inL(MRP_PREY,b)?["Mr. P"]:[]);

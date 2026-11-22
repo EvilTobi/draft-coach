@@ -54,10 +54,10 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Gegner-Sniper (Mandy, Piper …) auf offenen Maps = Abzug, weil er weniger Reichweite hat.
 - Auswertung 22.11. (Nutzer-Regeln): Gegner-Last-Pick an Pick 4/5 → Team braucht Werfer-Schutz (Assassine, eigener Werfer
   inkl. Mr. P, schnelle HP-Brawler wie Bibi eingeschränkt, Wallbreak nur auf Maps mit Wänden und nicht bei Tanks;
-  Tanks zählen nicht, Hank wird von Werfern gekontert).
+  Tanks zählen nicht (Frank/El Primo haben Wallbreak, Hank nicht), Hank wird von Werfern gekontert).
   Eigenes Team hat Last Pick → Last-Pick-Brawler (Edgar, Mortis …) an Pick 2/3 aufheben, mit Hinweis im Panel.
   Last Pick: Assassine +1,5, wenn noch keiner im Team. Gegen 3 Fernkämpfer mit Wallbreak: Assassine mit Abzug erlaubt.
-  Mr. P gegen ≥2 Sniper nur leicht abwerten. Gigi nur als 5./Last Pick weit oben, wenn Gegner viele Projektile haben
+  Mr. P gegen ≥2 Sniper nur leicht abwerten. Gigi nur ab Pick 4 (4./5./Last) weit oben, wenn Gegner viele Projektile haben
   (Amber, Griff, Meg, Gene, Colt, Rico, Tara, Shelly, Spike, 8-Bit; nicht Bull/Darryl), sonst Abzug.
   Antwort-Risiko an Pick 2/3: freier harter Konter (inkl. Mr. P gegen Einzelschuss-Sniper) = kleiner Abzug.
   Assassinen an Pick 5 vor Gegner-Last-Pick abwerten (Knockout stärker); Knockout-Map-Winrate ab 500 Spielen stärker.
