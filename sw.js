@@ -1,5 +1,5 @@
 // Offline-Cache. VERSION bei jedem Update erhöhen, damit alle Geräte die neue Fassung laden.
-const VERSION = "draft-coach-202611222119";
+const VERSION = "draft-coach-202611222130";
 const CORE = [
   "./",
   "index.html",

@@ -85,7 +85,10 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   (Matchup-Daten ab 150 Spielen, sonst Atlas-Modell, plus `COUNTERED_BY`/`MRP_PREY`/`FRANK_HARD`; ab 0,8 = harter Konter,
   gewichtet nach Meta des Konters). Bester freier Konter zählt ×1,5, die nächsten 3 je ×0,35, max. −7; First Pick ×0,35.
   Alle harten Konter gebannt/gepickt = +1,5. Ersetzt das alte „X ist noch frei“-Antwort-Risiko.
-  Dünne Daten (Nutzer ergänzt ggf. `COUNTERED_BY`): Sam, Lola, Pam, Jacky, Ollie, Janet, Sandy, Ziggy, Clancy, Glowy, Larry & Lawrie.
+  Nutzer-Konter in 3 Stufen: `COUNTERED_BY` (hart, +1,6), `SOFT_COUNTERS` (weich, +0,8), `SIT_COUNTERS` (situativ, +0,4), Funktion `userC`.
+  Liste vom 22.11. (Sam, Lola, Pam, Jacky, Ollie, Janet, Sandy, Ziggy, Clancy, Glowy, Larry & Lawrie) mit Daten geprüft;
+  unklare/widersprüchliche Einträge gestrichen → `NO_COUNTER` (zählen nie, auch nicht über Daten). Lola: keine Werfer-Konter
+  (wird meist in Heist gespielt). Poco (Gadget Protective Tunes) weich gegen Ollie, Crow, Byron, Amber.
 - Export „Neu seit letztem Export“ (`EXPMARK` in localStorage `rdc-expmark`): nur neue oder geänderte Drafts (Ergebnis/Notiz),
   geänderte mit „AKTUALISIERT“. Jeder Export markiert die enthaltenen Drafts.
   Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.
