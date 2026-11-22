@@ -160,6 +160,7 @@ summary{cursor:pointer;font-weight:600}
 .addmap input,.addmap select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--fg);font:inherit;font-size:13.5px;width:100%}
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:8px 14px;font-weight:700}
 #hist{margin-top:14px}
+#hist-exp .btn{padding:6px 10px;font-size:13px}
 .h{background:var(--panel-2);padding:8px 10px;margin-top:6px}
 .h summary{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-weight:500;font-size:13.5px}
 .h summary b{font-family:var(--f-display);font-weight:400;font-size:16px}
@@ -235,6 +236,8 @@ footer{font-size:12px;color:var(--muted)}
     </div>
     <details id="hist"><summary>Letzte Drafts <span class="sub" id="hist-n"></span></summary>
       <div class="sub" style="margin:6px 0 8px">Jeder fertige Draft wird hier automatisch gespeichert (nur auf diesem Gerät, die letzten 30).</div>
+      <div class="acts" id="hist-exp" style="margin-bottom:8px"><button class="btn ghost" data-hexp="today">Heute kopieren</button><button class="btn ghost" data-hexp="all">Alle kopieren</button></div>
+      <textarea id="hist-out" rows="6" readonly hidden style="width:100%;font-size:12px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px"></textarea>
       <div id="histlist"></div>
     </details>
   </section>
@@ -798,6 +801,7 @@ function renderBans(){
   const {reserve,intro,cands}=banPlan(map);
   const isBan=n=>S.bans.some(x=>x.toLowerCase()===n.toLowerCase());
   const top=cands.slice(0,8).map(c=>c.n);
+  if(!S.bans.length&&!S.picks.some(Boolean)) S.liveBans=top.slice(0,5);
   const items=top.concat(S.bans.filter(n=>!top.some(t=>t.toLowerCase()===n.toLowerCase())));
   let html="";
   if(reserve.length) html+=`<div class="reserve"><span class="why">Offen lassen für euren First Pick</span>${reserve.map(b=>`<span class="keep">${esc(b.name)}</span>`).join("")}</div>`;
@@ -865,6 +869,7 @@ function renderDraft(){
   // Siegchance relativ zum Durchschnitt der 30 besten Optionen
   const pool=all.slice(0,30).filter(x=>x.dp!=null), avgDp=pool.length?pool.reduce((t,x)=>t+x.dp,0)/pool.length:0;
   const list=all.slice(0,8);
+  if(team===mt){ S.live=S.live||{}; S.live[cs]=all.slice(0,5).map(x=>[x.name,+x.s.toFixed(1)]) } // für den Verlauf: was der Coach angezeigt hat
   list.forEach(x=>{ if(x.dp==null) return; x.dpRel=x.dp-avgDp;
     if(x.dpRel>=.01) x.why.push(["+",`${sgn1(x.dpRel)} Siegchance ggü. Durchschnitts-Pick`]); else if(x.dpRel<=-.01) x.why.push(["-",`${sgn1(x.dpRel)} Siegchance ggü. Durchschnitts-Pick`]); });
   const myPicks=S.picks.filter((p,i)=>p&&ORDER[i]===mt).map(get);
@@ -900,9 +905,40 @@ function recordDraft(){ // fertigen Draft speichern bzw. aktualisieren, wenn ein
   // Ohne „Neuer Draft“ neu eingetragen (kaum Picks gleich): als eigener Eintrag speichern statt den alten zu überschreiben
   if(old&&(old.map!==map.name||old.picks.filter((p,i)=>p===S.picks[i]).length<3)){S.did=newId();old=null}
   const e={id:S.did,t:old?old.t:Date.now(),map:map.name,mode:map.mode,pos:S.pos,bans:[...S.bans],picks:[...S.picks],
-    wp:MD?winProb(mine,en,map):null,res:old?old.res:null,note:old?old.note:""};
+    wp:MD?winProb(mine,en,map):null,res:old?old.res:null,note:old?old.note:"",
+    live:S.live?{...S.live}:(old&&old.live)||null,liveBans:S.liveBans||(old&&old.liveBans)||null};
   if(old&&JSON.stringify(old)===JSON.stringify(e)) return;
   HIST=[e].concat(HIST.filter(h=>h.id!==e.id)).sort((a,b)=>b.t-a.t).slice(0,30); store.set("hist",HIST);
+}
+// Export als Text zum Einfügen in den Chat: Draft, Ergebnis, Notiz und was der Coach bei jedem eigenen Pick vorschlägt
+function exportHist(which){
+  const today=new Date().toDateString();
+  const list=HIST.filter(h=>which==="all"||new Date(h.t).toDateString()===today).slice().reverse();
+  const keep={map:S.map,bans:S.bans,picks:S.picks};
+  const why=r=>r.why.slice(0,5).map(w=>(w[0]==="t"?"":w[0])+w[1]).join("; ");
+  const out=[`Draft-Coach-Export ${new Date().toLocaleString("de-DE")} · ${which==="all"?"alle":"heute"} (${list.length}) · Daten ${ST.generated||"?"}`,
+    `Bilanz: ${list.filter(h=>h.res==="w").length} Siege, ${list.filter(h=>h.res==="l").length} Niederlagen, ${list.filter(h=>!h.res).length} ohne Ergebnis`];
+  list.forEach((h,k)=>{
+    const map=allMaps().find(m=>m.name===h.map), mt=ORDER[h.pos-1];
+    out.push("",`## ${k+1}) ${new Date(h.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · ${MODES[h.mode]} · ${h.map} · eigene Position ${h.pos} (Team ${mt}) · ${h.res==="w"?"SIEG":h.res==="l"?"NIEDERLAGE":"Ergebnis offen"}${h.wp!=null?` · Modell ${Math.round(h.wp*100)} %`:""}`);
+    out.push(`Picks: ${h.picks.map((p,i)=>`${i+1}${ORDER[i]===mt?(i===h.pos-1?"*":"+"):"-"} ${p}`).join(" | ")}   (* du, + Teammate, - Gegner)`);
+    out.push(`Eigene Bans: ${h.bans.join(", ")||"–"}${h.liveBans?` · Ban-Vorschläge damals: ${h.liveBans.join(", ")}`:""}`);
+    if(h.note) out.push(`Notiz: ${h.note.replace(/\s+/g," ")}`);
+    if(!map){out.push("(Map nicht mehr im Pool)");return}
+    S.map=h.map; S.bans=h.bans;
+    h.picks.forEach((p,i)=>{ if(ORDER[i]!==mt) return;
+      S.picks=h.picks.slice(0,i).concat([null,null,null,null,null,null]).slice(0,6);
+      const mates=h.picks.slice(0,i).filter((_,j)=>ORDER[j]===mt), en=h.picks.slice(0,i).filter((_,j)=>ORDER[j]!==mt), u=used();
+      const all=NAMES.filter(n=>!u.has(n.toLowerCase())).map(n=>score(n,map,mates,en,i,mt)).sort((a,b)=>b.s-a.s);
+      const r=all.findIndex(x=>x.name===p), me=all[r];
+      out.push(`P${i+1} ${i===h.pos-1?"du":"Teammate"}: ${p} → Platz ${r+1} von ${all.length}${me?` (${me.s.toFixed(1)})`:""} · Top 5: ${all.slice(0,5).map(x=>`${x.name} ${x.s.toFixed(1)}`).join(", ")}`);
+      if(me) out.push(`   Gründe ${p}: ${why(me)}`);
+      if(r!==0) out.push(`   Gründe ${all[0].name}: ${why(all[0])}`);
+      if(h.live&&h.live[i]) out.push(`   Damals angezeigt: ${h.live[i].map(x=>x.join(" ")).join(", ")}`);
+    });
+  });
+  Object.assign(S,keep);
+  return out.join("\n");
 }
 function renderHist(){
   const w=HIST.filter(h=>h.res==="w").length, l=HIST.filter(h=>h.res==="l").length;
@@ -943,7 +979,9 @@ document.addEventListener("click",e=>{
   if(d.clear!=null){S.picks[+d.clear]=null;render();return}
   if(d.pool!=null){t.checked?disabled.delete(d.pool):disabled.add(d.pool);store.set("disabled",[...disabled]);renderMaps();return}
   if(d.delmap){e.preventDefault();customMaps=customMaps.filter(m=>m.name!==d.delmap);store.set("custom",customMaps);if(S.map===d.delmap)S.map=null;render();return}
-  if(t.id==="reset"){S.bans=[];S.picks=[null,null,null,null,null,null];S.did=newId();render();return}
+  if(t.id==="reset"){S.bans=[];S.picks=[null,null,null,null,null,null];S.did=newId();S.live=null;S.liveBans=null;render();return}
+  if(d.hexp){const txt=exportHist(d.hexp), o=$("hist-out"); o.value=txt; o.hidden=false;
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Kopiert: jetzt im Chat einfügen")).catch(()=>{o.focus();o.select();toast("Text markiert: bitte kopieren")}); return}
   if(d.hres){const h=HIST.find(x=>x.id===d.hres); if(h){h.res=h.res===d.r?null:d.r; store.set("hist",HIST); renderHist()} return}
   if(d.hdel){HIST=HIST.filter(x=>x.id!==d.hdel); store.set("hist",HIST); if(S.did===d.hdel)S.did=newId(); renderHist(); return}
   if(d.hopen){const h=HIST.find(x=>x.id===d.hopen); if(h&&allMaps().some(m=>m.name===h.map)){Object.assign(S,{map:h.map,pos:h.pos,bans:[...h.bans],picks:[...h.picks],did:h.id}); render(); $("s-draft").scrollIntoView({behavior:"smooth"})} else toast("Map nicht mehr im Pool"); return}
