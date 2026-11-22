@@ -52,7 +52,9 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 - Zwei Werfer (Klasse R) nur als eigener Last Pick und nur ohne Gegner-Assassinen. Mr. P ist Controller, aber werfer-ähnlich
   (zählt im Duo mit einem Werfer halb). Gegner mit mittlerer Range/viel HP füttern seine Super (Bonus);
   Gegner-Sniper (Mandy, Piper …) auf offenen Maps = Abzug, weil er weniger Reichweite hat.
-- Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Öffnen, Löschen.
+- Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Notiz, Öffnen, Löschen.
+  Export „Heute/Alle kopieren“ (`exportHist`): Picks, Bans, Notiz und je eigenem Pick Platz + Top 5 + Gründe
+  (mit aktuellen Regeln neu berechnet) sowie „Damals angezeigt“ (`live`, ab 22.11.2026 gespeichert). Nutzer fügt ihn im Chat ein.
 - Nutzer-Top-Meta (mind. 9): Lou, Vince, Amber, Melodie, Mr. P, Gale, Colette, Rico, Chester, Mandy.
 - Siegchance im Vorschlag relativ zum Durchschnitts-Pick; nach dem Draft Gewinnchance beider Teams + Spielplan
   (Lane/Mitte als Faustregel, Gegenüber/Fokus/Vorsicht mit Matchup-Winrates und Spielzahl).
