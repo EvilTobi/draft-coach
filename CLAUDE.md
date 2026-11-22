@@ -76,7 +76,8 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   (Meta 7,5), Sirius > El Primo/Surge (Tank-Killer). Antwort-Risiko −1,5 bei Konter mit Meta ≥ 8.
   Lou auf Maps mit Wänden kaum Schutz vor Assassinen; starke Assassinen dort als Last-Pick-Ban (Team A).
   Assassinen an Pick 4/5 vor Gegner-Last-Pick: Bounty wie Knockout. Spieltipps `PLAY_TIPS` (Trunk>Mico, Colette>Bibi),
-  Lou + Berry Zonen-Tipp, Heist mit 2 schnellen Brawlern: beide auf den Safe. Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.
+  Lou + Berry Zonen-Tipp, Heist mit 2 schnellen Brawlern: beide auf den Safe. Ash gegen Einzelschuss-Brawler (`ASH_PREY`: Surge, Meeple, Gus …) weit oben, v. a. Gem Grab/Brawl Ball (Ratten blocken).
+  Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.
   Bibi>Melodie/Frank>Meeple-Tipps bewusst nicht
   (Nutzer: Seite nicht überladen, Draft am iPad muss schnell gehen).
 - Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Notiz, Öffnen, Löschen.
