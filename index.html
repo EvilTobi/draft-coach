@@ -562,7 +562,7 @@ const COUNTERED_BY = {
  "Alli":["Kenji","Bull","Shelly","Frank"],
  "Draco":["Frank","Lou","Nita","Dynamike","Ash"],
  "Finx":["Kenji","Darryl","Bull","Buzz"],
- "Hank":["Frank","El Primo","Dynamike"],
+ "Hank":["Frank","El Primo","Dynamike","Barley","Sprout","Grom","Tick","Larry & Lawrie","Juju"], // Werfer kontern Hank (Nutzer)
  "Jae-yong":["Frank","Ollie","Bull","Doug"],
  "Bea":["Mr. P","Charlie","Barley","Tick","Sprout"],
  "Shade":["Jacky","Frank","Shelly"],
@@ -591,7 +591,7 @@ const FAST_HP = ["Bibi","Darryl","Fang","Buzz","Max","Stu","Mico"];
 // Harte Konter von Frank (Nutzer: Colette, Lou, Gale; dazu laut Matchup-Daten Otis, Pierce, R-T, Shelly, Emz, Spike, Cosmo)
 const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz","Spike","Cosmo"];
 // Brawler mit vielen Projektilen: laden Gigis Super schnell auf (Nutzer-Erfahrung)
-const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit","Bull","Darryl"];
+const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit"]; // nicht Bull/Darryl: gegen die verliert Gigi im Nahkampf
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
 const MRP_PREY = ["Piper","Belle","Mandy","Angelo","Bea","Brock","Nani"];
 const isThrower = b => b.cls==="R"; // echte Werfer (Artillerie)
@@ -654,7 +654,7 @@ function threats(team,map){
     if(b.tags.includes("k"))antiA+=.9; if(b.cls==="T")antiA+=.8; if(b.cls==="D"&&b.range===1)antiA+=.7;
     if(b.tags.includes("h"))antiA+=.3; if(b.tags.includes("at"))antiA+=.4; if(inL(ANTI_ASSASSIN,b))antiA+=.8;
     if(["R","M"].includes(b.cls)||(b.cls==="S"&&!b.tags.includes("h")))fragile++;
-    if(b.cls==="A")antiR+=1; if(inL(FAST_HP,b)&&b.cls!=="A")antiR+=.5; if(b.tags.includes("m"))antiR+=.5; if(b.tags.includes("w"))antiR+=.5; if(lobby(b))antiR+=.4; if(b.range===3)antiR+=.3;
+    if(b.cls==="A")antiR+=1; if(inL(FAST_HP,b)&&b.cls!=="A")antiR+=.5; if(b.tags.includes("m"))antiR+=.5; if(b.tags.includes("w")&&b.cls!=="T")antiR+=.5; if(lobby(b))antiR+=.4; if(b.range===3)antiR+=.3;
   });
   const tv=team.map(b=>inL(TANK_KILLERS,b)||b.tags.includes("at")?2:dps(b)>=3?1.4:dps(b)/3).sort((x,y)=>y-x);
   tankDmg=tv[0]+.4*tv.slice(1).reduce((a,c)=>a+c,0);
@@ -789,15 +789,17 @@ function score(name,map,mates,enemies,slot,team){
   // Gegner haben noch den Last Pick: ein Team ohne Schutz vor Werfern wird von einem Werfer-Last-Pick bestraft
   if(plan.later>0&&slot>=3&&tm.length){
     const rB=threats(tm,map).R, rA=threats(tm.concat([b]),map).R;
-    const stopsR = b.cls==="A"||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&map.walls<=1);
+    const stopsR = b.cls==="A"||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&b.cls!=="T"&&map.walls>=1);
     if(stopsR&&rB>=.6&&rA<=rB-.3){ s+=1.5; why.unshift(["+","verhindert einen Werfer-Last-Pick der Gegner"]) }
     else if(slot===4&&rA>=.75){ s-=3; why.unshift(["-","Gegner können mit Werfer als Last Pick kontern"]) }
   }
   // Gigi: Gegner mit vielen Projektilen laden ihre Super schnell auf
+  // nur als 5. oder Last Pick weit oben, wenn die Gegner mindestens einen passenden Brawler haben
   if(b.name==="Gigi"){ const mp=enB.filter(e=>inL(MULTI_PROJ,e));
-    if(mp.length){ s+=Math.min(3,1.2*mp.length); why.push(["+",`${mp.map(e=>e.name).join(" und ")} ${mp.length>1?"laden":"lädt"} Gigis Super schnell auf (viele Projektile)`]) } }
+    if(mp.length&&slot>=4){ s+=Math.min(4.5,2.5+mp.length); why.unshift(["+",`${mp.map(e=>e.name).join(" und ")} ${mp.length>1?"laden":"lädt"} Gigis Super schnell auf (viele Projektile)`]) }
+    else { s-=3; why.push(["-","Gigi erst als 5. oder Last Pick gegen Brawler mit vielen Projektilen"]) } }
   // Antwort-Risiko: Ist ein starker Konter noch frei, den die Gegner direkt danach picken können?
-  if(plan.later>=2&&slot>0){
+  if(plan.later>=1&&slot>0){
     const u=used(), cand=(COUNTERED_BY[b.name]||[]).concat(inL(MRP_PREY,b)?["Mr. P"]:[]);
     const hit=cand.find(n=>!u.has(n.toLowerCase())&&NAMES.includes(n)&&(get(n).meta>=7.5||n==="Mr. P"));
     if(hit){ s-=.8; why.push(["-",`${hit} ist noch frei und kontert ${b.name}`]) }
