@@ -52,6 +52,15 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 - Zwei Werfer (Klasse R) nur als eigener Last Pick und nur ohne Gegner-Assassinen. Mr. P ist Controller, aber werfer-ähnlich
   (zählt im Duo mit einem Werfer halb). Gegner mit mittlerer Range/viel HP füttern seine Super (Bonus);
   Gegner-Sniper (Mandy, Piper …) auf offenen Maps = Abzug, weil er weniger Reichweite hat.
+- Auswertung 22.11. (Nutzer-Regeln): Gegner-Last-Pick an Pick 4/5 → Team braucht Werfer-Schutz (Assassine, eigener Werfer
+  inkl. Mr. P, schnelle HP-Brawler wie Bibi eingeschränkt, Wallbreak nur auf Maps mit wenig Wänden; Tanks zählen nicht).
+  Eigenes Team hat Last Pick → Last-Pick-Brawler (Edgar, Mortis …) an Pick 2/3 aufheben, mit Hinweis im Panel.
+  Last Pick: Assassine +1,5, wenn noch keiner im Team. Gegen 3 Fernkämpfer mit Wallbreak: Assassine mit Abzug erlaubt.
+  Mr. P gegen ≥2 Sniper nur leicht abwerten; Gigi-Bonus gegen viele Projektile (Amber, Griff, Meg, Gene …).
+  Antwort-Risiko an Pick 2/3: freier harter Konter (inkl. Mr. P gegen Einzelschuss-Sniper) = kleiner Abzug.
+  Assassinen an Pick 5 vor Gegner-Last-Pick abwerten (Knockout stärker); Knockout-Map-Winrate ab 500 Spielen stärker.
+  Frank nur als Last Pick ohne harten Konter beim Gegner (`FRANK_HARD`), an Pick 5 nur wenn alle harten Konter weg sind.
+  Nach dem Draft „So spielt ihr“ (`teamHint`) + Spielplan; schlechtes Duell → „meiden“, in Heist „Safe angreifen“.
 - Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Notiz, Öffnen, Löschen.
   Export „Heute/Alle kopieren“ (`exportHist`): Picks, Bans, Notiz und je eigenem Pick Platz + Top 5 + Gründe
   (mit aktuellen Regeln neu berechnet) sowie „Damals angezeigt“ (`live`, ab 22.11.2026 gespeichert). Nutzer fügt ihn im Chat ein.
