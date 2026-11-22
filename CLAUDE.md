@@ -71,12 +71,13 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Werfer an Pick 1–3 abwerten, solange starke Assassinen frei sind (Mr. P nur leicht); Ausnahme `MAP_BONUS` (Juju auf
   Parallel Plays wegen Wasser, auch als First Pick). Pick 4 bei eigenem Pick 5: Hinweis „höchstens einer nimmt einen Werfer“.
   Tanks an Pick 4/5 vor Gegner-Last-Pick: Abzug für freie `TANK_HARD` (halb, wenn schon ein Tank im Team).
-  Frank: freier harter Konter vor Gegner-Pick −15, Konter beim Gegner −6 (`FRANK_HARD` inkl. Meeple-Stun, Sirius).
+  Frank: freier harter Konter vor Gegner-Pick −15, Konter beim Gegner −6 (`FRANK_HARD` inkl. Sirius; Meeple NICHT, zu wenig Schaden).
   Hank: Gegner-Wallbreak −3, Griff/Frank/Colette frei −3. Konter: Melodie > Bibi, Otis > Melodie, Assassinen > Squeak
   (Meta 7,5), Sirius > El Primo/Surge (Tank-Killer). Antwort-Risiko −1,5 bei Konter mit Meta ≥ 8.
   Lou auf Maps mit Wänden kaum Schutz vor Assassinen; starke Assassinen dort als Last-Pick-Ban (Team A).
   Assassinen an Pick 4/5 vor Gegner-Last-Pick: Bounty wie Knockout. Spieltipps `PLAY_TIPS` (Trunk>Mico, Colette>Bibi),
-  Lou + Berry Zonen-Tipp, Heist mit 2 schnellen Brawlern: beide auf den Safe. Bibi>Melodie/Frank>Meeple-Tipps bewusst nicht
+  Lou + Berry Zonen-Tipp, Heist mit 2 schnellen Brawlern: beide auf den Safe. Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.
+  Bibi>Melodie/Frank>Meeple-Tipps bewusst nicht
   (Nutzer: Seite nicht überladen, Draft am iPad muss schnell gehen).
 - Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Notiz, Öffnen, Löschen.
   Export „Heute/Alle kopieren“ (`exportHist`): Picks, Bans, Notiz und je eigenem Pick Platz + Top 5 + Gründe

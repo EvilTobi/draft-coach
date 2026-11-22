@@ -430,7 +430,7 @@ let HIST = store.get("hist",[]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611222010"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611222016"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -590,7 +590,7 @@ const COUNTERED_BY = {
  "Mortis":["Shelly","Tara","Gale","Buster","Bull"],
  "Edgar":["Shelly","Bull","Gale","Buster","Jacky"]
 };
-const ANTI_ASSASSIN = ["Shelly","Jacky","Darryl","Tara","Buster","Bull","Frank","Gale","Lou","Otis","Emz","Kenji"];
+const ANTI_ASSASSIN = ["Shelly","Jacky","Darryl","Tara","Buster","Bull","Frank","Gale","Lou","Otis","Emz","Kenji","Willow"]; // Willow: Super übernimmt den Assassinen (Nutzer)
 // Brawler, die Tanks zuverlässig stoppen (hoher DPS, Slow/Freeze/Silence oder %-Schaden)
 const TANK_KILLERS = ["Griff","Pierce","Lou","Otis","Colette","Shelly","Bull","Spike","Colt","8-Bit","Bea","Maisie","R-T","Chester","Clancy","Vince","Ruby","Emz","Gale","Frank","Sirius"];
 const ANTI_TANK = ["Bea","Colt","Belle","Piper","Spike","Colette","Shelly","Griff","Maisie","8-Bit","Bull"];
@@ -604,7 +604,7 @@ const inL = (l,b) => l.includes(b.name);
 // Schnelle Brawler mit viel HP: können Werfern ausweichen und Druck machen (eingeschränkter Schutz vor Werfern)
 const FAST_HP = ["Bibi","Darryl","Fang","Buzz","Max","Stu","Mico"];
 // Harte Konter von Frank (Nutzer: Colette, Lou, Gale; dazu laut Matchup-Daten Otis, Pierce, R-T, Shelly, Emz, Spike, Cosmo)
-const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz","Spike","Cosmo","Meeple","Sirius"]; // Meeple: Stun unterbricht seine Super
+const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz","Spike","Cosmo","Sirius"]; // Meeple bewusst nicht (Nutzer: zu wenig Schaden)
 // Harte Tank-Konter: sind sie noch frei, bestrafen sie einen Tank an Pick 4/5 als Last Pick (Nutzer: Colette gegen Frank)
 const TANK_HARD = ["Colette","Griff","Pierce","Otis","Shelly","R-T","Sirius"];
 // Map-Besonderheiten (Nutzer): Juju wird durch Wasser stärker, auf Parallel Plays auch als First Pick
@@ -776,9 +776,10 @@ function score(name,map,mates,enemies,slot,team){
   // Zwei Werfer nur als eigener Last Pick und nur, wenn die Gegner keinen Assassinen haben
   // Mr. P zählt als werfer-ähnlich nur halb
   if(lobby(b)&&tm.some(lobby)){
-    const o=tm.find(lobby), half=!isThrower(b)||!isThrower(o), other=o.name, enA=enB.find(e=>e.cls==="A");
-    const lbl=half?"werfer-ähnliches Duo":"zweiter Werfer";
-    if(plan.later>0){s-=half?3:6;why.unshift(["-",`${lbl} mit ${other}: Gegner können mit Assassine kontern`])}
+    const o=tm.find(lobby), wil=b.name==="Willow"||o.name==="Willow", half=!isThrower(b)||!isThrower(o)||wil, other=o.name, enA=enB.find(e=>e.cls==="A");
+    // Willow kontrolliert Assassinen mit ihrer Super: Werfer-Duo mit ihr nur halb so riskant (Nutzer)
+    const wd=wil&&isThrower(b)&&isThrower(o), lbl=wd?"Werfer-Duo":half?"werfer-ähnliches Duo":"zweiter Werfer";
+    if(plan.later>0){s-=half?3:6;why.unshift(["-",wd?`Werfer-Duo mit ${other}: Willows Super hält Assassinen auf, kleines Restrisiko`:`${lbl} mit ${other}: Gegner können mit Assassine kontern`])}
     else if(enA){s-=half?2.5:5;why.unshift(["-",`${lbl} mit ${other}, Gegner haben ${enA.name}`])}
     else why.push(["+",`${lbl} möglich: Gegner haben keinen Assassinen`]);
   }
@@ -829,7 +830,7 @@ function score(name,map,mates,enemies,slot,team){
   // Werfer früh (Pick 1–3): Assassinen sind noch frei und kontern ihn (Nutzer). Mr. P nur leicht. Ausnahme: Map-Bonus (Juju auf Parallel Plays)
   if(lobby(b)&&slot<=2&&!(MAP_BONUS[map.name]||{})[b.name]){
     const u=used(), freeA=NAMES.filter(n=>!u.has(n.toLowerCase())).map(get).filter(x=>x.cls==="A"&&x.meta>=7);
-    if(freeA.length){ const pen=(1+.5*Math.min(3,freeA.length))*(isThrower(b)?1:.25); s-=pen;
+    if(freeA.length){ const pen=(1+.5*Math.min(3,freeA.length))*(!isThrower(b)?.25:b.name==="Willow"?.5:1); s-=pen;
       if(pen>=1) why.unshift(["-",`Werfer erst später: ${freeA.slice(0,3).map(x=>x.name).join(", ")}${freeA.length>3?" …":""} noch frei`]) }
   }
   // Tank an Pick 4/5, Gegner haben noch den Last Pick: freie harte Tank-Konter bestrafen ihn (Nutzer: Colette gegen Frank).
