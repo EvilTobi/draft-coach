@@ -14,6 +14,9 @@ Draft-Hilfe für Brawl Stars Ranked (Deutsch). Statische PWA, live unter https:/
 - `sw.js` – Offline-Cache. **Bei jeder Änderung `VERSION` erhöhen**, sonst bekommen installierte Apps das Update nicht.
   `APP_VERSION` in `index.html` immer gleich halten (Zeitstempel ohne `draft-coach-`): wird im Hinweis-Kasten als
   „App-Version“ angezeigt; die App lädt `sw.js` frisch (SW lässt sie durch) und meldet „Neue Version verfügbar“.
+  **Changelog** (`CHANGELOG` in `index.html`, aufklappbar unter dem Verlauf): bei jedem Live-Update oben einen Eintrag mit
+  `v` = neue APP_VERSION (Literal, nicht die Variable), Datum, Titel und einfachen Sätzen ergänzen. `update_data.py` fügt
+  bei Daten-Updates automatisch „Daten aktualisiert“ ein.
 - `manifest.webmanifest`, `icons/`, `maps/*.webp` (Map-Bilder aus dem Fandom-Wiki).
 
 ## Ranked-Kontext (Stand 19.11.2026, Season 51)

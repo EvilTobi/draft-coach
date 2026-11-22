@@ -348,5 +348,8 @@ open(SW, "w", encoding="utf-8").write(sw)
 IDX = os.path.join(ROOT, "index.html")
 idx = open(IDX, encoding="utf-8").read()
 idx = re.sub(r'const APP_VERSION = "[^"]*";', f'const APP_VERSION = "{ver}";', idx)
+# Changelog-Eintrag für das Daten-Update oben einfügen
+now = datetime.datetime.now(datetime.timezone.utc)
+idx = idx.replace("const CHANGELOG = [\n", "const CHANGELOG = [\n" + f' {{v:"{ver}", d:"{now:%d.%m.%Y}", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand {stats["generated"]})."]}},\n', 1)
 open(IDX, "w", encoding="utf-8").write(idx)
 log(f"Fertig: {OUT} ({os.path.getsize(OUT) // 1024} KB) · {len(brawlers)} Brawler · {len(VS)} Matchups · {len(SYN)} Kombis")

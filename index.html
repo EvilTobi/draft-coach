@@ -153,6 +153,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .empty{color:var(--muted);font-size:13.5px;padding:8px 0}
 details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 summary{cursor:pointer;font-weight:600}
+#changelog{margin-top:12px}.cl{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}.cl ul{margin:4px 0 0;padding-left:18px;font-size:13.5px}.cl li{margin:2px 0}
 .pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 16px;margin-top:10px;font-size:13.5px}
 .pool label{display:flex;gap:8px;align-items:center}
 .addmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px;align-items:end}
@@ -241,6 +242,10 @@ footer{font-size:12px;color:var(--muted)}
       <div class="acts" id="hist-exp" style="margin-bottom:8px"><button class="btn" data-hexp="new">Neu seit letztem Export</button><button class="btn ghost" data-hexp="today">Heute kopieren</button><button class="btn ghost" data-hexp="all">Alle kopieren</button></div>
       <textarea id="hist-out" rows="6" readonly hidden style="width:100%;font-size:12px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px"></textarea>
       <div id="histlist"></div>
+    </details>
+    <details id="changelog"><summary>Changelog · Was ist neu? <span class="sub" id="cl-ver"></span></summary>
+      <div class="sub" style="margin:6px 0 4px">Die Version steht auch oben im Hinweis-Kasten. Ist dort eine ältere Version zu sehen, App ganz schließen und neu öffnen.</div>
+      <div id="cl-list"></div>
     </details>
   </section>
 
@@ -433,7 +438,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611222045"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611222119"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -1168,8 +1173,47 @@ render();
 
 // ---------- Datenstand ----------
 try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstand ${ST.generated}`+(so.draftmeta?` · ${(so.draftmeta.drafts.m12+so.draftmeta.drafts.m3+so.draftmeta.drafts.pro).toLocaleString("de-DE")} Masters+-Drafts`:"")+(so.corestats?` · ${so.corestats.sets.toLocaleString("de-DE")} Pro-Scrims`:"")+".":""}catch(e){}
-// ---------- App-Version + Update-Check ----------
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
+// ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
+const CHANGELOG = [
+ {v:"202611222119", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
+  "Solange die Gegner noch picken, prüft der Coach bei jedem Brawler, welche seiner harten Konter noch frei sind. Der stärkste freie Konter zählt voll, weitere nur wenig. Sind alle Konter gebannt oder gepickt, gibt es einen Bonus.",
+  "Ash und Mr. P reagieren dadurch auf Bans: z. B. Ash vor Mr. P, wenn Griff, Emz und El Primo gebannt sind, Edgar aber offen ist.",
+  "Squeak zählt nicht mehr als Einzelschuss-Brawler gegen Ash (seine Explosion trifft alle Ratten).",
+  "Verlauf: neuer Knopf „Neu seit letztem Export“ kopiert nur neue oder geänderte Drafts.",
+  "Dieser Changelog."]},
+ {v:"202611222020", d:"22.11.2026", t:"Auswertung der Abend-Spiele", items:[
+  "Ziggy, Willow und Berry zählen als Werfer. Werfer an Pick 1–3 werden abgewertet, solange starke Assassinen frei sind.",
+  "Pick 4: Hinweis, dass Pick 4 und 5 höchstens einen Werfer nehmen sollen.",
+  "Tanks an Pick 4/5 werden abgewertet, solange Colette, Griff und andere Tank-Konter frei sind. Frank fast nur noch als Last Pick, Hank leidet unter Wallbreak.",
+  "Willow schützt mit ihrer Super vor Assassinen. Juju ist auf Parallel Plays stärker (Wasser).",
+  "Neue Konter: Melodie > Bibi, Otis > Melodie, Assassinen > Squeak, Sirius > El Primo/Surge. Meeple ist kein Frank-Konter.",
+  "Ash weit oben gegen Einzelschuss-Brawler wie Surge, Meeple, Gus (Ratten blocken), vor allem in Gem Grab und Brawl Ball.",
+  "Lou schützt auf Maps mit Wänden kaum vor Assassinen. Spieltipps nach dem Draft (z. B. Trunk gegen Mico)."]},
+ {v:"202611221543", d:"22.11.2026", t:"App-Version", items:[
+  "Die App-Version steht im Hinweis-Kasten. Gibt es online eine neuere Version, erscheint „Neue Version verfügbar – jetzt laden“."]},
+ {v:"202611221537", d:"22.11.2026", t:"Auswertung der Mittags-Spiele", items:[
+  "Pick 4/5 vor dem Gegner-Last-Pick: Team braucht Schutz vor Werfern (Assassine, eigener Werfer, schnelle HP-Brawler).",
+  "Last-Pick-Brawler wie Edgar oder Mortis für euren eigenen Last Pick aufheben (mit Hinweis).",
+  "Gigi weit oben ab Pick 4 gegen Brawler mit vielen Projektilen. Frank nur als Last Pick ohne harten Konter.",
+  "Last Pick: Assassinen werden aufgewertet, schwache Map-Winrate von Konter-Picks zählt nur halb.",
+  "Nach dem Draft: „So spielt ihr“ mit kurzen Tipps."]},
+ {v:"202611221438", d:"22.11.2026", t:"Verlauf exportieren", items:[
+  "Knöpfe „Heute kopieren“ und „Alle kopieren“: Drafts, Notizen und Coach-Vorschläge als Text für die Auswertung."]},
+ {v:"202611212009", d:"21.11.2026", t:"Neue Daten und Draft-Verlauf", items:[
+  "Statistiken neu geladen, fast nur Daten nach der Balance-Änderung vom 11.11.",
+  "Draft-Verlauf mit Sieg/Niederlage und Notiz.",
+  "Tanks in Knockout und Bounty abgewertet. Zwei Werfer nur als eigener Last Pick.",
+  "Mr. P: Gegner mit mittlerer Range oder viel HP füttern seine Super, Sniper auf offenen Maps sind schlecht für ihn."]},
+ {v:"202611202304", d:"20.11.2026", t:"Spielplan und Gewinnchance", items:[
+  "Nach dem Draft: Gewinnchance beider Teams und Spielplan (Lane, Gegenüber, Fokus).",
+  "Frank auf offenen Maps und in Heist abgewertet. Tanks stark gegen Teams mit wenig Schaden."]},
+ {v:"202611192344", d:"19.11.2026", t:"Erste Version", items:[
+  "Draft-Hilfe mit Ranked-Statistiken (Pro, Masters), Siegchance laut Modell und First-Pick-Wert."]}
+];
+$("cl-ver").textContent="aktuell "+fmtVer(APP_VERSION);
+$("cl-list").innerHTML=CHANGELOG.map((c,i)=>`<div class="cl"><div class="cl-h"><b>${esc(c.t)}</b> <span class="sub">Version ${fmtVer(c.v)}${i===0?" · aktuell":""}</span></div><ul>${c.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("");
+// ---------- App-Version + Update-Check ----------
 $("app-ver").textContent=`App-Version ${fmtVer(APP_VERSION)}.`;
 if(navigator.onLine!==false) fetch("sw.js?check="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
   const m=/const VERSION = "draft-coach-(\d+)"/.exec(t||""); if(!m||m[1]<=APP_VERSION) return;
