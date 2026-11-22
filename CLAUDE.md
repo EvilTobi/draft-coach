@@ -62,6 +62,8 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Antwort-Risiko an Pick 2/3: freier harter Konter (inkl. Mr. P gegen Einzelschuss-Sniper) = kleiner Abzug.
   Assassinen an Pick 5 vor Gegner-Last-Pick abwerten (Knockout stärker); Knockout-Map-Winrate ab 500 Spielen stärker.
   Frank nur als Last Pick ohne harten Konter beim Gegner (`FRANK_HARD`), an Pick 5 nur wenn alle harten Konter weg sind.
+  Pick-Position: keine Quelle hat Winrates je Pick-Position (DraftMeta nur pick/ban/openPickRate, Corestats ohne Reihenfolge).
+  Näherung: beim Last Pick zählt eine schwache Map-Winrate von Assassinen/Last-Pick-Brawlern/Gigi nur halb.
   Nach dem Draft „So spielt ihr“ (`teamHint`) + Spielplan; schlechtes Duell → „meiden“, in Heist „Safe angreifen“.
 - Verlauf: fertige Drafts automatisch in localStorage (`rdc-hist`, max. 30), mit Sieg/Niederlage, Notiz, Öffnen, Löschen.
   Export „Heute/Alle kopieren“ (`exportHist`): Picks, Bans, Notiz und je eigenem Pick Platz + Top 5 + Gründe

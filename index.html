@@ -681,6 +681,13 @@ function score(name,map,mates,enemies,slot,team){
   if(b.meta>=8.5) why.push(["+","Top-Meta"]);
   if(TRIAL.includes(b.name)) why.push(["t","Trial: für alle verfügbar"]);
   const f=mapFit(b,map); s+=f.s; why=why.concat(f.why);
+  // Pick-Position: Keine Quelle liefert Winrates je Pick-Position. Konter-Picks (Assassinen, Last-Pick-Brawler, Gigi) werden
+  // auch früh gepickt und verlieren dann öfter, ihre Map-Winrate ist für den Last Pick daher zu niedrig. Beim Last Pick zählt
+  // eine schwache Map-Winrate bei ihnen nur halb.
+  const mrw=map.st&&map.st[b.name];
+  if(slot===5&&mrw&&mrw.n>=40&&mrw.wr<.5&&(b.cls==="A"||inL(LASTPICK,b)||b.name==="Gigi")){
+    const back=(.5-mrw.wr)*(map.mode==="ko"&&mrw.n>=500?18:10)*.5; s+=back;
+    if(back>=.2) why.push(["+","schwache Map-Winrate zählt als später Konter-Pick nur halb"]) }
   // Konter
   let countered=0;
   const enB=enemies.map(get), nSnip=enB.filter(e=>e.cls==="M"||(e.range===3&&e.cls==="D")).length;
