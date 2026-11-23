@@ -635,6 +635,14 @@ const dps = b => DPS_OVR[b.name] ?? (CLS_DPS[b.cls] + (b.tags.includes("at")?1:0
 const inL = (l,b) => l.includes(b.name);
 // Schnelle Brawler mit viel HP: können Werfern ausweichen und Druck machen (eingeschränkter Schutz vor Werfern)
 const FAST_HP = ["Bibi","Darryl","Fang","Buzz","Max","Stu","Mico"];
+// Space Maker (Bobby-Draft-Guide): Assassinen plus Brawler, die mit Dash/Sprung/Speed Distanz schließen. Schlagen Werfer
+// (+3,9 % laut Matchup-Daten), verlieren gegen Tanks (+2,8 % für Tanks)
+const SPACE_MAKERS = ["Bull","Bibi","Buzz","Carl","Mina","Chuck","Sam","Gigi","Darryl"];
+const isSM = b => b.cls==="A" || inL(SPACE_MAKERS,b);
+const isAT = b => inL(TANK_KILLERS,b) || b.tags.includes("at"); // Anti-Tank
+const AGGRO_MODES = ["gem","ball","hz","heist"];
+// Heist gegen Chuck (Bobby): nicht verteidigen, sondern Schaden auf den Safe; Hyper-Brawler laden an Chuck auf
+const CHUCK_DEFENDERS = ["Angelo","R-T","Eve","Belle","Cordelius"], HEIST_HYPER = ["8-Bit","Colette","Nita","Crow"];
 // Harte Konter von Frank (Nutzer: Colette, Lou, Gale; dazu laut Matchup-Daten Otis, Pierce, R-T, Shelly, Emz, Spike, Cosmo)
 const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz","Spike","Cosmo","Sirius"]; // Meeple bewusst nicht (Nutzer: zu wenig Schaden)
 // Harte Tank-Konter: sind sie noch frei, bestrafen sie einen Tank an Pick 4/5 als Last Pick (Nutzer: Colette gegen Frank)
@@ -728,7 +736,7 @@ function threats(team,map){
     if(b.tags.includes("k"))antiA+=louWalls?.2:.9; if(b.cls==="T")antiA+=.8; if(b.cls==="D"&&b.range===1)antiA+=.7;
     if(b.tags.includes("h"))antiA+=.3; if(b.tags.includes("at"))antiA+=.4; if(inL(ANTI_ASSASSIN,b)&&!louWalls)antiA+=.8;
     if(["R","M"].includes(b.cls)||(b.cls==="S"&&!b.tags.includes("h")))fragile++;
-    if(b.cls==="A")antiR+=1; if(inL(FAST_HP,b)&&b.cls!=="A")antiR+=.5; if(b.tags.includes("m"))antiR+=.5; if(b.tags.includes("w")&&b.cls!=="T")antiR+=.5; if(lobby(b))antiR+=.4; if(b.range===3)antiR+=.3;
+    if(b.cls==="A")antiR+=1; if((inL(FAST_HP,b)||inL(SPACE_MAKERS,b))&&b.cls!=="A")antiR+=.5; if(b.tags.includes("m"))antiR+=.5; if(b.tags.includes("w")&&b.cls!=="T")antiR+=.5; if(lobby(b))antiR+=.4; if(b.range===3)antiR+=.3;
   });
   const tv=team.map(b=>inL(TANK_KILLERS,b)||b.tags.includes("at")?2:dps(b)>=3?1.4:dps(b)/3).sort((x,y)=>y-x);
   tankDmg=tv[0]+.4*tv.slice(1).reduce((a,c)=>a+c,0);
@@ -874,7 +882,7 @@ function score(name,map,mates,enemies,slot,team){
   // Gegner haben noch den Last Pick: ein Team ohne Schutz vor Werfern wird von einem Werfer-Last-Pick bestraft
   if(plan.later>0&&slot>=3&&tm.length){
     const rB=threats(tm,map).R, rA=threats(tm.concat([b]),map).R;
-    const stopsR = b.cls==="A"||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&b.cls!=="T"&&map.walls>=1);
+    const stopsR = isSM(b)||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&b.cls!=="T"&&map.walls>=1);
     if(stopsR&&rB>=.6&&rA<=rB-.3){ s+=1.5; why.unshift(["+","verhindert einen Werfer-Last-Pick der Gegner"]) }
     else if(slot===4&&rA>=.75){ s-=3; why.unshift(["-","Gegner können mit Werfer als Last Pick kontern"]) }
   }
@@ -905,6 +913,18 @@ function score(name,map,mates,enemies,slot,team){
     const u=used(), freeA=(COUNTERED_BY.Squeak||[]).filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
     if(slot===5){ s+=1; why.push(["+","Last Pick: Assassinen können Squeak nicht mehr kontern"]) }
     else if(plan.later>0&&!freeA.length){ s+=1; why.push(["+","alle Assassinen-Konter gebannt oder gepickt"]) } }
+  // Tank gegen Space Maker ohne Anti-Tank beim Gegner (Bobby; Daten: Tanks +2,8 % gegen Space Maker)
+  if(b.cls==="T"&&!inL(SPACE_MAKERS,b)){ const sm=enB.filter(isSM);
+    if(sm.length&&!enB.some(isAT)){ s+=2; why.unshift(["+",`${sm.map(e=>e.name).join(" und ")} ${sm.length>1?"kommen":"kommt"} gegen viel HP nicht an (Gegner ohne Anti-Tank)`]) } }
+  // Aggro-Modi: Ohne Anti-Tank geht es nicht, drei Anti-Tanks sind zu viel (Bobby)
+  if(AGGRO_MODES.includes(map.mode)&&tm.length){ const at=tm.filter(isAT).length;
+    if(!at&&isAT(b)&&(slot===3||slot===4||tm.length===2)){ s+=2.5; why.unshift(["+","Team braucht noch einen Anti-Tank"]) }
+    else if(!at&&!isAT(b)&&tm.length===2){ s-=1.5; why.push(["-","Team hätte dann keinen Anti-Tank"]) }
+    else if(at>=2&&isAT(b)){ s-=2; why.push(["-","schon zwei Anti-Tanks im Team"]) } }
+  // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
+  if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
+    if(inL(CHUCK_DEFENDERS,b)){ s-=2.5; why.unshift(["-","gegen Chuck nicht verteidigen: lieber Schaden auf den Safe"]) }
+    else if(inL(HEIST_HYPER,b)){ s+=1.5; why.unshift(["+","lädt die Hyper an Chuck und gibt Schaden auf den Safe zurück"]) } }
   // Hank braucht Wände: gegnerischer Wallbreak nimmt ihm die Deckung (Nutzer)
   if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak: Hank verliert seine Deckung`]) }
     // Nutzer: kein Hank, solange Griff, Frank oder Colette noch frei sind und die Gegner noch picken
@@ -1215,7 +1235,10 @@ const CHANGELOG = [
  {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
   "Weitere weiche Konter, bestätigt durch ein Video von Arthur Brawl Stars und unsere Daten: Berry > Penny, Surge > Melodie/Shade/Kenji, Nori > Kaze/Colt.",
   "Squeak wird auf Maps, wo er oft gepickt wird (z. B. Layer Cake, Undermine, Ring of Fire), öfter als Pick und Bann vorgeschlagen. Extra-Bonus als Last Pick oder wenn seine Assassinen-Konter weg sind.",
-  "Edgar kontert Juju, außer auf Maps mit Wasser (Parallel Plays)."]},
+  "Edgar kontert Juju, außer auf Maps mit Wasser (Parallel Plays).",
+  "Draft-Guide (Bobby): Space Maker wie Bull, Mina, Chuck, Carl, Sam, Gigi schützen vor Werfern. Tanks gegen Space Maker, wenn die Gegner keinen Anti-Tank haben.",
+  "Brawl Ball, Gem Grab, Hot Zone, Heist: Das Team braucht einen Anti-Tank, drei sind zu viel.",
+  "Heist gegen Chuck: keine Verteidiger (Angelo, R-T, Belle …), lieber Schaden auf den Safe (8-Bit, Colette, Nita)."]},
  {v:"202611231838", d:"23.11.2026", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand 23.11.2026): Ranked-Drafts vom 16.–23.11. (DraftMeta) und Pro-Scrims vom 15.–23.11. (Corestats). Das Brawl-Atlas-Modell bleibt bis zum Atlas-Update gleich."]},
  {v:"202611222130", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
   "Solange die Gegner noch picken, prüft der Coach bei jedem Brawler, welche seiner harten Konter noch frei sind. Der stärkste freie Konter zählt voll, weitere nur wenig. Sind alle Konter gebannt oder gepickt, gibt es einen Bonus.",

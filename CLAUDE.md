@@ -94,6 +94,10 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 - Squeak = Nutzer-Favorit: auf Maps mit Pick-Rang ≤ 12 (`popRank`) +3 als Pick, +2,3 als Bann; +1 als Last Pick oder wenn
   alle Assassinen-Konter weg sind. Edgar kontert Juju hart, außer auf Wasser-Maps (`WATER_MAPS`, `ONWATER`): Nutzer-Erfahrung
   geht vor Daten (Daten sind Team-Ergebnisse, keine Einzel-Duelle).
+- Draft-Guide Bobby (vor ~7 Monaten, Grundregeln mit Daten geprüft): `SPACE_MAKERS` (Bull, Bibi, Buzz, Carl, Mina, Chuck, Sam,
+  Gigi, Darryl + Assassinen, `isSM`) zählen als Werfer-Schutz. Tank +2 gegen Space Maker, wenn Gegner keinen Anti-Tank (`isAT`) hat.
+  `AGGRO_MODES` (gem, ball, hz, heist): Team ohne Anti-Tank → Anti-Tank +2,5 an Pick 4/5 bzw. beim dritten Team-Pick,
+  sonst −1,5; schon 2 Anti-Tanks → −2. Heist gegen Chuck: `CHUCK_DEFENDERS` −2,5, `HEIST_HYPER` +1,5.
 - Export „Neu seit letztem Export“ (`EXPMARK` in localStorage `rdc-expmark`): nur neue oder geänderte Drafts (Ergebnis/Notiz),
   geänderte mit „AKTUALISIERT“. Jeder Export markiert die enthaltenen Drafts.
   Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.
