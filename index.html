@@ -619,7 +619,9 @@ const SIT_COUNTERS = {
 const NO_COUNTER = {"Lola":["Pearl","Piper","Mr. P","Sprout","Ziggy","Barley","Grom","Tick","Dynamike","Larry & Lawrie","Juju"],
  "Ollie":["Surge","Gale","Clancy"], "Janet":["Piper"], "Sandy":["Colette"], "Jacky":["Otis"], "Clancy":["Piper","Nani","Mandy"],
  "Glowy":["Cordelius","Dynamike"], "Larry & Lawrie":["Melodie","Buzz"]};
-const userC = (e,b) => (COUNTERED_BY[b]||[]).includes(e)?1.6:(SOFT_COUNTERS[b]||[]).includes(e)?.8:(SIT_COUNTERS[b]||[]).includes(e)?.4:0;
+// Wasser-Maps: Juju steht auf dem Wasser und gewinnt dann gegen Edgar (Nutzer); sonst kontert Edgar Juju hart
+const WATER_MAPS = ["Parallel Plays"]; let ONWATER=false;
+const userC = (e,b) => b==="Juju"&&e==="Edgar" ? (ONWATER?0:1.6) : (COUNTERED_BY[b]||[]).includes(e)?1.6:(SOFT_COUNTERS[b]||[]).includes(e)?.8:(SIT_COUNTERS[b]||[]).includes(e)?.4:0;
 const ANTI_ASSASSIN = ["Shelly","Jacky","Darryl","Tara","Buster","Bull","Frank","Gale","Lou","Otis","Emz","Kenji","Willow"]; // Willow: Super übernimmt den Assassinen (Nutzer)
 // Brawler, die Tanks zuverlässig stoppen (hoher DPS, Slow/Freeze/Silence oder %-Schaden)
 const TANK_KILLERS = ["Griff","Pierce","Lou","Otis","Colette","Shelly","Bull","Spike","Colt","8-Bit","Bea","Maisie","R-T","Chester","Clancy","Vince","Ruby","Emz","Gale","Frank","Sirius"];
@@ -696,12 +698,14 @@ function counter(b,e){ // Vorteil von b gegen Gegner e
   const w=VS[e.name+"|"+b.name]; if(w) s-=w[0]*10;
   s+=modelPair(b.name,e.name)*10;
   if((NO_COUNTER[e.name]||[]).includes(b.name)) s=Math.min(s,0); // vom Nutzer gestrichen
+  if(ONWATER&&b.name==="Juju"&&e.name==="Edgar") s=Math.max(s,.3); // auf dem Wasser verliert Juju nicht gegen Edgar (Nutzer)
+  if(ONWATER&&b.name==="Edgar"&&e.name==="Juju") s=Math.min(s,0);
   return s;
 }
 // Wie hart kontert e den Brawler b? Nur Matchup-Daten (Scrims, BrawlLab, BrawlPick), Brawl-Atlas-Modell und Nutzer-Listen,
 // ohne Klassen-Faustregeln (die stecken schon im Team-Check). Ab ~0,8 gilt e als harter Konter. Ergebnis gemerkt.
 const HC={};
-function hardC(e,b){ const k=e+"|"+b; if(k in HC) return HC[k];
+function hardC(e,b){ const k=e+"|"+b+(ONWATER?"|w":""); if(k in HC) return HC[k];
   if((NO_COUNTER[b]||[]).includes(e)) return HC[k]=0;
   let c=userC(e,b); if(e==="Mr. P"&&MRP_PREY.includes(b)) c+=1.6;
   if(b==="Frank"&&FRANK_HARD.includes(e)) c+=1.2;
@@ -745,7 +749,10 @@ function slotPlan(slot,team){ // was zählt an dieser Draft-Position
     later
   };
 }
+// Nutzer spielt Squeak gern: auf Maps, wo er oft gepickt wird (Top 12 der Pickrate), öfter vorschlagen und bannen
+function popRank(map,n){ if(!map.st||!map.st[n]) return 99; const all=Object.entries(map.st).filter(([k,x])=>x.n>=50).sort((a,b)=>b[1].pr-a[1].pr); const i=all.findIndex(x=>x[0]===n); return i<0?99:i+1 }
 function score(name,map,mates,enemies,slot,team){
+  ONWATER=WATER_MAPS.includes(map.name);
   const b=get(name), plan=slotPlan(slot,team);
   let s=b.meta*.55, why=[];
   if(b.meta>=8.5) why.push(["+","Top-Meta"]);
@@ -893,6 +900,11 @@ function score(name,map,mates,enemies,slot,team){
   if(b.name==="Ash"){ const pr=enB.filter(e=>inL(ASH_PREY,e));
     if(pr.length){ const v=Math.min(6,3+1.5*(pr.length-1))*(["gem","ball"].includes(map.mode)?1:.5); s+=v;
       why.unshift(["+",`Ashs Ratten blocken die Einzelschüsse von ${pr.map(e=>e.name).join(" und ")}`]) } }
+  // Squeak (Nutzer-Favorit): auf Maps, wo er oft gepickt wird, aufwerten; noch mehr, wenn Assassinen ihn nicht mehr kontern können
+  if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){ s+=3; why.unshift(["+",`auf ${map.name} oft gepickt`]);
+    const u=used(), freeA=(COUNTERED_BY.Squeak||[]).filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
+    if(slot===5){ s+=1; why.push(["+","Last Pick: Assassinen können Squeak nicht mehr kontern"]) }
+    else if(plan.later>0&&!freeA.length){ s+=1; why.push(["+","alle Assassinen-Konter gebannt oder gepickt"]) } }
   // Hank braucht Wände: gegnerischer Wallbreak nimmt ihm die Deckung (Nutzer)
   if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak: Hank verliert seine Deckung`]) }
     // Nutzer: kein Hank, solange Griff, Frank oder Colette noch frei sind und die Gegner noch picken
@@ -928,6 +940,7 @@ function score(name,map,mates,enemies,slot,team){
 }
 // Ban-Plan je nach Position
 function banPlan(map){
+  ONWATER=WATER_MAPS.includes(map.name);
   const u=new Set(S.picks.filter(Boolean).concat(S.bans).map(n=>n.toLowerCase()));
   const pool=NAMES.filter(n=>!u.has(n.toLowerCase())).map(get);
   const ranked=pool.map(b=>({b,p:power(b,map)})).sort((x,y)=>y.p-x.p);
@@ -948,6 +961,7 @@ function banPlan(map){
     if(team==="B"&&inL(BLIND,b)){s+=.6;why.unshift("starker First Pick der Gegner")}
     if(pos===6&&inL(BLIND,b)){s+=.4}
     reserve.forEach(r=>{ if(counter(b,r)>=1.2){s+=1.3;why.unshift("kontert "+r.name)} });
+    if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){s+=2.3;why.unshift(`oft gepickt auf ${map.name}`)}
     if(team==="A"&&pos!==1){ if(b.cls==="A"||b.cls==="R"||inL(LASTPICK,b)||(inL(ANTI_TANK,b)&&["ball","heist"].includes(map.mode))){s+=.9;why.unshift("gefährlicher Last Pick der Gegner")} }
     if(pos===1&&(b.cls==="A"||inL(LASTPICK,b))){s+=.4}
     if(team==="A"&&b.cls==="A"&&b.meta>=8&&map.walls>=1){s+=.8; if(!why.includes("gefährlicher Last Pick der Gegner"))why.unshift("gefährlicher Last Pick der Gegner (Wände)")}
@@ -1199,7 +1213,9 @@ const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
  {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
-  "Weitere weiche Konter, bestätigt durch ein Video von Arthur Brawl Stars und unsere Daten: Berry > Penny, Surge > Melodie/Shade/Kenji, Nori > Kaze/Colt."]},
+  "Weitere weiche Konter, bestätigt durch ein Video von Arthur Brawl Stars und unsere Daten: Berry > Penny, Surge > Melodie/Shade/Kenji, Nori > Kaze/Colt.",
+  "Squeak wird auf Maps, wo er oft gepickt wird (z. B. Layer Cake, Undermine, Ring of Fire), öfter als Pick und Bann vorgeschlagen. Extra-Bonus als Last Pick oder wenn seine Assassinen-Konter weg sind.",
+  "Edgar kontert Juju, außer auf Maps mit Wasser (Parallel Plays)."]},
  {v:"202611231838", d:"23.11.2026", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand 23.11.2026): Ranked-Drafts vom 16.–23.11. (DraftMeta) und Pro-Scrims vom 15.–23.11. (Corestats). Das Brawl-Atlas-Modell bleibt bis zum Atlas-Update gleich."]},
  {v:"202611222130", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
   "Solange die Gegner noch picken, prüft der Coach bei jedem Brawler, welche seiner harten Konter noch frei sind. Der stärkste freie Konter zählt voll, weitere nur wenig. Sind alle Konter gebannt oder gepickt, gibt es einen Bonus.",
