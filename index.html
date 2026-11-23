@@ -438,7 +438,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611232330"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611232331"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -1252,7 +1252,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
- {v:"202611232330", d:"24.11.2026", t:"Auswertung: Anti-Assassinen-Hinweis, Vision-Gear, Ring of Fire", items:[
+ {v:"202611232331", d:"23.11.2026", t:"Auswertung: Anti-Assassinen-Hinweis, Vision-Gear, Ring of Fire", items:[
   "Ist der Schutz vor Assassinen schwach, zeigt das Panel die beste Option, auch wenn sie nicht in den Top 8 ist.",
   "Auf Maps mit vielen Büschen (Sneaky Fields, Double Swoosh) gibt es den Tipp Vision-Gear. Dry Season gilt jetzt als Map mit wenig Büschen.",
   "Ring of Fire gilt jetzt als offene Map mit wenig Wänden und vielen Büschen außen. Cosmo wird dort aufgewertet. Bo kontert Amber leicht, Mina situativ. Mr. P kontert Chester leicht. Willow kontert Lou auf Maps mit Wänden situativ.",
