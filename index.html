@@ -400,7 +400,7 @@ const DEFAULT_MAPS = [
  ["Shooting Star","bounty",2,0,1,"Piper,Mandy,Belle,Vince,Bea,Angelo"],
  ["Hideout","bounty",0,2,1,"Tick,Grom,Mr. P,Juju,Larry & Lawrie,Shade"],
  ["Layer Cake","bounty",1,2,0,"Grom,Tick,Sprout,Mandy,Gene"],
- ["Dry Season","bounty",1,1,2,"Belle,Gene,Vince,Leon,Kenji,Sandy"],
+ ["Dry Season","bounty",1,1,1,"Belle,Gene,Vince,Leon,Kenji,Sandy"],
 ].map(([name,mode,open,walls,bush,p])=>({name,mode,open,walls,bush,picks:p.split(","),img:"maps/"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+".webp"}));
 const TRIAL = ["Frank","Mico","Spike","Bonnie","Max","Amber"]; // Ranked Season 51: für alle maxed spielbar
 
@@ -506,11 +506,13 @@ function matchup(a,e){ // erwarteter Winrate-Vorteil von a gegen e
 const isFast = b => b.tags.includes("m")||b.cls==="A"||inL(FAST_HP,b);
 // Spieltipps aus den Notizen des Nutzers (eigener Brawler > Gegner)
 const PLAY_TIPS = {"Trunk>Mico":"Gegen Mico abwarten, bis er gesprungen ist, sonst geht dein Angriff ins Leere",
-  "Colette>Bibi":"Bibi konsequent verfolgen, sie darf nicht in Ruhe Super laden"};
+  "Colette>Bibi":"Bibi konsequent verfolgen, sie darf nicht in Ruhe Super laden",
+  "Gale>Doug":"Gale geht auf Doug: ihn zuerst ausschalten, seine Super belebt einen Mitspieler wieder",
+  "Colette>8-Bit":"Colette geht auf 8-Bit: ihr Schaden in % der HP knackt ihn am schnellsten"};
 function gamePlan(mine,en,map){
   const mb=mine.map(get), eb=en.map(get), perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
   let best=null; // gegnerische Brawler so zuteilen, dass die Summe der Vorteile am größten ist
-  perms.forEach(pm=>{const t=pm.reduce((acc,j,i)=>acc+matchup(mb[i].name,eb[j].name).d,0); if(!best||t>best.t) best={t,pm}});
+  perms.forEach(pm=>{const t=pm.reduce((acc,j,i)=>acc+matchup(mb[i].name,eb[j].name).d+(PLAY_TIPS[mb[i].name+">"+eb[j].name]?.1:0),0); if(!best||t>best.t) best={t,pm}});
   let carrier=null;
   const fast=mb.filter(isFast).slice(0,2); // Heist: zwei schnelle Brawler gehen direkt auf den Safe (Nutzer: Chuck + Nori)
   if(map.mode==="gem") carrier=[...mb].sort((x,y)=>"SCMDRAT".indexOf(x.cls)-"SCMDRAT".indexOf(y.cls))[0];
@@ -551,6 +553,7 @@ function teamHint(mine,en,map){
     ball:"Brawl Ball: erst Gegner ausschalten, dann mit dem Ball nach vorne. Ball nicht ohne Super ins Leere spielen.",
     hz:"Hot Zone: zu dritt in der Zone, nicht einzeln reinlaufen."}[map.mode];
   if(mb.some(b=>b.name==="Lou")&&mb.some(b=>b.name==="Berry")) out.push("Lou und Berry: mit Lous Super und Berrys Angriff den Gegnern die Wege abschneiden.");
+  if(map.bush===2) out.push("Viele Büsche: Vision-Gear ausrüsten und die Mitte kontrollieren.");
   if(mode) out.push(mode);
   out.push(p>=.55?"Ihr habt den besseren Draft: Druck machen und Vorteile direkt ausspielen.":p<=.45?"Die Gegner haben den stärkeren Draft: sicher spielen, zusammenbleiben und auf ihre Fehler warten.":"Ausgeglichener Draft: Zusammenspiel und die ersten Duelle entscheiden.");
   return out.slice(0,5);
@@ -608,20 +611,20 @@ const SOFT_COUNTERS = {
  "Sam":["Colette","Otis","Doug"], "Lola":["Rico","Willow"], "Pam":["Colette","Jessie","Ziggy","Larry & Lawrie","Sirius","Mr. P"],
  "Jacky":["Emz"], "Ollie":["Bull","Poco","Doug","Trunk","Rosa"], "Janet":["Nani","Belle","Ash","Rosa","Frank"], "Sandy":["Tara","Lou"],
  "Ziggy":["Lily","Kenji","Mina","Alli","Starr Nova","Kaze"], "Clancy":["Rico","Mr. P","Larry & Lawrie"], "Glowy":["Emz","8-Bit","Mr. P","Gale"],
- "Larry & Lawrie":["Mr. P","Mortis","Alli","Bolt","Starr Nova","Kaze","Kenji"], "Crow":["Poco"], "Byron":["Poco"], "Amber":["Poco"],
+ "Larry & Lawrie":["Mr. P","Mortis","Alli","Bolt","Starr Nova","Kaze","Kenji"], "Crow":["Poco"], "Byron":["Poco"],
  // Video Arthur Brawl Stars (17.11.), mit Daten bestätigt
- "Penny":["Berry"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"]};
+ "Penny":["Berry"], "Amber":["Poco","Bo"], "Chester":["Mr. P"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"]};
 const SIT_COUNTERS = {
  "Sam":["8-Bit","Emz"], "Lola":["Brock"], "Pam":["Willow","Penny"], "Jacky":["Lumi","Shelly"], "Ollie":["El Primo","Emz"],
  "Janet":["Sprout","Ziggy"], "Sandy":["El Primo","Bo"], "Ziggy":["El Primo","Buzz"], "Clancy":["Willow","8-Bit"], "Glowy":["Poco","Lou"],
- "Larry & Lawrie":["Lily"]};
+ "Larry & Lawrie":["Lily"], "Amber":["Mina"]};
 // Gestrichen (Nutzer): zählen nie als Konter, auch nicht über Daten/Modell. Lola wird meist in Heist gespielt, Werfer dort selten.
 const NO_COUNTER = {"Lola":["Pearl","Piper","Mr. P","Sprout","Ziggy","Barley","Grom","Tick","Dynamike","Larry & Lawrie","Juju"],
  "Ollie":["Surge","Gale","Clancy"], "Janet":["Piper"], "Sandy":["Colette"], "Jacky":["Otis"], "Clancy":["Piper","Nani","Mandy"],
  "Glowy":["Cordelius","Dynamike"], "Larry & Lawrie":["Melodie","Buzz"]};
 // Wasser-Maps: Juju steht auf dem Wasser und gewinnt dann gegen Edgar (Nutzer); sonst kontert Edgar Juju hart
-const WATER_MAPS = ["Parallel Plays"]; let ONWATER=false;
-const userC = (e,b) => b==="Juju"&&e==="Edgar" ? (ONWATER?0:1.6) : (COUNTERED_BY[b]||[]).includes(e)?1.6:(SOFT_COUNTERS[b]||[]).includes(e)?.8:(SIT_COUNTERS[b]||[]).includes(e)?.4:0;
+const WATER_MAPS = ["Parallel Plays"]; let ONWATER=false, WALLMAP=false; // WALLMAP: Willow wirft über Wände auf Lou (Nutzer)
+const userC = (e,b) => b==="Juju"&&e==="Edgar" ? (ONWATER?0:1.6) : b==="Lou"&&e==="Willow"&&WALLMAP ? .4 : (COUNTERED_BY[b]||[]).includes(e)?1.6:(SOFT_COUNTERS[b]||[]).includes(e)?.8:(SIT_COUNTERS[b]||[]).includes(e)?.4:0;
 const ANTI_ASSASSIN = ["Shelly","Jacky","Darryl","Tara","Buster","Bull","Frank","Gale","Lou","Otis","Emz","Kenji","Willow"]; // Willow: Super übernimmt den Assassinen (Nutzer)
 // Brawler, die Tanks zuverlässig stoppen (hoher DPS, Slow/Freeze/Silence oder %-Schaden)
 const TANK_KILLERS = ["Griff","Pierce","Lou","Otis","Colette","Shelly","Bull","Spike","Colt","8-Bit","Bea","Maisie","R-T","Chester","Clancy","Vince","Ruby","Emz","Gale","Frank","Sirius"];
@@ -648,7 +651,8 @@ const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz",
 // Harte Tank-Konter: sind sie noch frei, bestrafen sie einen Tank an Pick 4/5 als Last Pick (Nutzer: Colette gegen Frank)
 const TANK_HARD = ["Colette","Griff","Pierce","Otis","Shelly","R-T","Sirius"];
 // Map-Besonderheiten (Nutzer): Juju wird durch Wasser stärker, auf Parallel Plays auch als First Pick
-const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser auf der Map stärkt Juju"]}};
+const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser auf der Map stärkt Juju"]},
+  "Ring of Fire":{"Cosmo":[4,"offene Map: Cosmo kontrolliert die Zone, sein Gadget schützt vor Dash-Brawlern"]}};
 // Brawler mit vielen Projektilen: laden Gigis Super schnell auf (Nutzer-Erfahrung)
 const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit"]; // nicht Bull/Darryl: gegen die verliert Gigi im Nahkampf
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
@@ -716,7 +720,7 @@ function counter(b,e){ // Vorteil von b gegen Gegner e
 // Wie hart kontert e den Brawler b? Nur Matchup-Daten (Scrims, BrawlLab, BrawlPick), Brawl-Atlas-Modell und Nutzer-Listen,
 // ohne Klassen-Faustregeln (die stecken schon im Team-Check). Ab ~0,8 gilt e als harter Konter. Ergebnis gemerkt.
 const HC={};
-function hardC(e,b){ const k=e+"|"+b+(ONWATER?"|w":""); if(k in HC) return HC[k];
+function hardC(e,b){ const k=e+"|"+b+(ONWATER?"|w":"")+(WALLMAP?"|m":""); if(k in HC) return HC[k];
   if((NO_COUNTER[b]||[]).includes(e)) return HC[k]=0;
   let c=userC(e,b); if(e==="Mr. P"&&MRP_PREY.includes(b)) c+=1.6;
   if(b==="Frank"&&FRANK_HARD.includes(e)) c+=1.2;
@@ -764,7 +768,7 @@ function slotPlan(slot,team){ // was zählt an dieser Draft-Position
 const mapPr = (map,n) => !map.st ? 1 : (map.st[n]||{}).pr||0; // Pickrate auf der Map (Anteil der Spiele)
 function popRank(map,n){ if(!map.st||!map.st[n]) return 99; const all=Object.entries(map.st).filter(([k,x])=>x.n>=50).sort((a,b)=>b[1].pr-a[1].pr); const i=all.findIndex(x=>x[0]===n); return i<0?99:i+1 }
 function score(name,map,mates,enemies,slot,team){
-  ONWATER=WATER_MAPS.includes(map.name);
+  ONWATER=WATER_MAPS.includes(map.name); WALLMAP=map.walls>=1;
   const b=get(name), plan=slotPlan(slot,team);
   let s=b.meta*.55, why=[];
   if(b.meta>=8.5) why.push(["+","Top-Meta"]);
@@ -972,7 +976,7 @@ function score(name,map,mates,enemies,slot,team){
 }
 // Ban-Plan je nach Position
 function banPlan(map){
-  ONWATER=WATER_MAPS.includes(map.name);
+  ONWATER=WATER_MAPS.includes(map.name); WALLMAP=map.walls>=1;
   const u=new Set(S.picks.filter(Boolean).concat(S.bans).map(n=>n.toLowerCase()));
   const pool=NAMES.filter(n=>!u.has(n.toLowerCase())).map(get);
   const ranked=pool.map(b=>({b,p:power(b,map)})).sort((x,y)=>y.p-x.p);
@@ -1102,6 +1106,10 @@ function renderDraft(){
   const th=threats(myPicks,map), plan=slotPlan(cs,team);
   const lvl=v=>v<.35?["gut","ok"]:v<.8?["mittel","mid"]:["schwach","bad"];
   const check=myPicks.length?`<div class="check"><div class="why">Team-Check (${myPicks.length}/3)</div>${[["A","Schutz vor Assassinen"],["R","Schutz vor Werfern"],["T","Schaden gegen Tanks"]].map(([k,l])=>{const [t,c]=lvl(th[k]);return `<div class="cm ${c}"><span>${l}</span><b>${t}</b><span class="bar"><i style="width:${Math.round(100-Math.min(1.5,th[k])/1.5*100)}%"></i></span></div>`}).join("")}</div>`:"";
+  // Nutzer: bei schwachem Schutz vor Assassinen die beste Option zeigen, auch wenn sie nicht in den Top 8 ist
+  let aNote="";
+  if(team===mt&&myPicks.length&&th.A>=.8&&plan.later>0){ const i=all.findIndex(x=>{const b=get(x.name); return threats(myPicks.concat([b]),map).A<.8&&mapPr(map,x.name)>=.035});
+    if(i>=0) aNote=`<div class="sub">Bester Schutz vor Assassinen: <b>${esc(all[i].name)}</b> (Platz ${i+1})</div>`; }
   const focus = team!==mt?"": cs===0?"Fokus: sicherer Blind-Pick, der wenig harte Konter hat." : cs===5?"Fokus: Last Pick. Wer die meisten Gegner kontert, steht oben." : plan.later>0&&cs===4?"Fokus: Die Gegner haben noch den Last Pick. Euer Team darf nicht anfällig für Assassinen oder Werfer sein und braucht genug Schaden gegen Tanks." : cs===3?"Fokus: Konter gegen Pick 2 und 3, ohne Schwächen für den Last Pick der Gegner." : "Fokus: Konter gegen den First Pick und ein solider Pick in alle Richtungen.";
   const max=list[0]?list[0].s:1, min=Math.min(...list.map(x=>x.s))-1;
   let head;
@@ -1114,7 +1122,7 @@ function renderDraft(){
   const lobbyNote=team===mt&&cs===3&&ORDER[4]===team&&plan.later>0&&!S.picks.some((p,i)=>p&&ORDER[i]===team&&lobby(get(p)))&&list.slice(0,5).some(x=>isThrower(x.b))
     ?`<div class="focus">Pick 4 und 5 absprechen: höchstens einer von euch nimmt einen Werfer, die Gegner haben noch den Last Pick.</div>`:"";
   const lastNote=keepLast?`<div class="focus">Tipp: <b>${esc(keepLast.name)}</b> kontert die Gegner, ist aber ein Last Pick. Hebt ihn für Pick 6 auf, sonst können die Gegner an Pick 4/5 noch reagieren.</div>`:"";
-  P.innerHTML=head+(focus?`<div class="focus">${focus}</div>`:"")+lastNote+lobbyNote+waitNote+wp+check+`<div class="sugg">`+list.map((x,i)=>{
+  P.innerHTML=head+(focus?`<div class="focus">${focus}</div>`:"")+lastNote+lobbyNote+waitNote+wp+check+aNote+`<div class="sugg">`+list.map((x,i)=>{
     const barW=Math.max(8,Math.round((x.s-min)/(max-min)*100));
     const rs=x.why.slice(0,5).map(([k,t])=>`<span class="tag ${k==="+"?"p":k==="t"?"t":"n"}">${k==="+"?"▲":k==="t"?"★":"▼"} ${esc(t)}</span>`).join("");
     const st=x.b.st, mr=x.mr, parts=[];
@@ -1244,6 +1252,11 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+  "Ist der Schutz vor Assassinen schwach, zeigt das Panel die beste Option, auch wenn sie nicht in den Top 8 ist.",
+  "Auf Maps mit vielen Büschen (Sneaky Fields, Double Swoosh) gibt es den Tipp Vision-Gear. Dry Season gilt jetzt als Map mit wenig Büschen.",
+  "Cosmo wird auf Ring of Fire aufgewertet. Bo kontert Amber leicht, Mina situativ. Mr. P kontert Chester leicht. Willow kontert Lou auf Maps mit Wänden situativ.",
+  "Spieltipps: Gale geht auf Doug (seine Super belebt wieder), Colette geht auf 8-Bit."]},
  {v:"202611232129", d:"23.11.2026", t:"Neue Draft-Regeln: Space Maker, Anti-Tank, Pickrate je Map", items:[
   "Weitere weiche Konter, bestätigt durch ein Video von Arthur Brawl Stars und unsere Daten: Berry > Penny, Surge > Melodie/Shade/Kenji, Nori > Kaze/Colt.",
   "Squeak wird auf Maps, wo er oft gepickt wird (z. B. Layer Cake, Undermine, Ring of Fire), öfter als Pick und Bann vorgeschlagen. Extra-Bonus als Last Pick oder wenn seine Assassinen-Konter weg sind.",
