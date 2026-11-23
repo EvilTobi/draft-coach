@@ -392,7 +392,7 @@ const DEFAULT_MAPS = [
  ["Dueling Beetles","hz",1,1,1,"Amber,Emz,Mr. P,Lou,Cosmo,Sandy"],
  ["Open Business","hz",2,0,1,"Amber,Mr. P,Lou,Piper,Gene,Cosmo"],
  ["Parallel Plays","hz",1,1,1,"Amber,Emz,Sprout,Mr. P,Wendy,Spike"],
- ["Ring of Fire","hz",1,2,0,"Amber,Tick,Lou,Cosmo,Mr. P,Grom"],
+ ["Ring of Fire","hz",2,0,2,"Amber,Tick,Lou,Cosmo,Mr. P,Grom"],
  ["Belle's Rock","ko",1,1,1,"Belle,Piper,Mandy,Vince,Gene,Byron,Wendy"],
  ["New Horizons","ko",2,1,1,"Piper,Mandy,Belle,Vince,Pierce,Byron,Angelo"],
  ["Out in the Open","ko",2,0,1,"Piper,Mandy,Belle,Vince,Angelo,Byron"],
@@ -438,7 +438,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611232129"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611232330"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -652,7 +652,7 @@ const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz",
 const TANK_HARD = ["Colette","Griff","Pierce","Otis","Shelly","R-T","Sirius"];
 // Map-Besonderheiten (Nutzer): Juju wird durch Wasser stärker, auf Parallel Plays auch als First Pick
 const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser auf der Map stärkt Juju"]},
-  "Ring of Fire":{"Cosmo":[4,"offene Map: Cosmo kontrolliert die Zone, sein Gadget schützt vor Dash-Brawlern"]}};
+  "Ring of Fire":{"Cosmo":[6,"offene Map: Cosmo kontrolliert die Zone, sein Gadget schützt vor Dash-Brawlern"]}};
 // Brawler mit vielen Projektilen: laden Gigis Super schnell auf (Nutzer-Erfahrung)
 const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit"]; // nicht Bull/Darryl: gegen die verliert Gigi im Nahkampf
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
@@ -1252,10 +1252,10 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
- {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+ {v:"202611232330", d:"24.11.2026", t:"Auswertung: Anti-Assassinen-Hinweis, Vision-Gear, Ring of Fire", items:[
   "Ist der Schutz vor Assassinen schwach, zeigt das Panel die beste Option, auch wenn sie nicht in den Top 8 ist.",
   "Auf Maps mit vielen Büschen (Sneaky Fields, Double Swoosh) gibt es den Tipp Vision-Gear. Dry Season gilt jetzt als Map mit wenig Büschen.",
-  "Cosmo wird auf Ring of Fire aufgewertet. Bo kontert Amber leicht, Mina situativ. Mr. P kontert Chester leicht. Willow kontert Lou auf Maps mit Wänden situativ.",
+  "Ring of Fire gilt jetzt als offene Map mit wenig Wänden und vielen Büschen außen. Cosmo wird dort aufgewertet. Bo kontert Amber leicht, Mina situativ. Mr. P kontert Chester leicht. Willow kontert Lou auf Maps mit Wänden situativ.",
   "Spieltipps: Gale geht auf Doug (seine Super belebt wieder), Colette geht auf 8-Bit."]},
  {v:"202611232129", d:"23.11.2026", t:"Neue Draft-Regeln: Space Maker, Anti-Tank, Pickrate je Map", items:[
   "Weitere weiche Konter, bestätigt durch ein Video von Arthur Brawl Stars und unsere Daten: Berry > Penny, Surge > Melodie/Shade/Kenji, Nori > Kaze/Colt.",

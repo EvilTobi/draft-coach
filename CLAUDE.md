@@ -104,7 +104,7 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   < 1,5 % −4,5, < 0,5 % −7 (außer Top-Picks der Map und `MAP_BONUS`). Pickrate = Anteil der Spiele (Summe aller Brawler ≈ 6).
 - Auswertung 23.11. abends: Panel zeigt „Bester Schutz vor Assassinen: X (Platz n)“, wenn Team-Check A schwach und Gegner noch picken
   (`aNote`, nur Brawler ab 3,5 % Pickrate). Vision-Gear-Tipp bei bush = 2 (Dry Season auf bush 1 gesetzt, Nutzer: wenig Büsche).
-  Cosmo `MAP_BONUS` Ring of Fire +4 (Nutzer; Daten: 48 % Map-Winrate, verliert gegen Mortis/Edgar/Mandy). Weich: Bo>Amber, Mr. P>Chester;
+  Ring of Fire = offen, wenig Wände, viele Büsche außen (Nutzer). Cosmo `MAP_BONUS` Ring of Fire +6 (Nutzer; Daten: 48 % Map-Winrate, verliert gegen Mortis/Edgar/Mandy). Weich: Bo>Amber, Mr. P>Chester;
   situativ: Mina>Amber, Willow>Lou auf Maps mit Wänden (`WALLMAP`). `PLAY_TIPS` Gale>Doug, Colette>8-Bit; Tipp-Paare werden im Spielplan
   bevorzugt zugeteilt. Abgelehnt: Tipp „Lou in die gegnerische Zone“, 8-Bit-Gadget-Tipp, Knockout-Fokus-Tipp.
   Chuck außerhalb von Heist/Hot Zone −8. Shelly in Heist −4 bis −10 (je seltener gepickt, desto mehr), außer Gegner haben 3 Tanks/Nahkämpfer.
