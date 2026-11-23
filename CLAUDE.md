@@ -97,7 +97,11 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 - Draft-Guide Bobby (vor ~7 Monaten, Grundregeln mit Daten geprüft): `SPACE_MAKERS` (Bull, Bibi, Buzz, Carl, Mina, Chuck, Sam,
   Gigi, Darryl + Assassinen, `isSM`) zählen als Werfer-Schutz. Tank +2 gegen Space Maker, wenn Gegner keinen Anti-Tank (`isAT`) hat.
   `AGGRO_MODES` (gem, ball, hz, heist): Team ohne Anti-Tank → Anti-Tank +2,5 an Pick 4/5 bzw. beim dritten Team-Pick,
-  sonst −1,5; schon 2 Anti-Tanks → −2. Heist gegen Chuck: `CHUCK_DEFENDERS` −2,5, `HEIST_HYPER` +1,5.
+  sonst −1,5; schon 2 Anti-Tanks → −2. Heist gegen Chuck: `CHUCK_DEFENDERS` −2,5 (nicht, wenn Gegner
+  auch eine Assassine hat, z. B. Melodie), `HEIST_HYPER` +1,5. Space-Maker-Werferschutz nur ab 3,5 % Map-Pickrate (`mapPr`).
+  R-T zählt nur in Hot Zone (+ Knockout/Bounty) als Anti-Tank; Rico nie −1,5, auf Maps mit Wänden (walls ≥ 2) ohne Gegner-Wallbreak +1,2.
+- Nutzer 23.11.: Brawler, die auf der Map kaum gespielt werden, abwerten (in `mapFit`, gilt auch für Bans): Pickrate < 3,5 % −2,5,
+  < 1,5 % −4,5, < 0,5 % −7 (außer Top-Picks der Map und `MAP_BONUS`). Pickrate = Anteil der Spiele (Summe aller Brawler ≈ 6).
 - Export „Neu seit letztem Export“ (`EXPMARK` in localStorage `rdc-expmark`): nur neue oder geänderte Drafts (Ergebnis/Notiz),
   geänderte mit „AKTUALISIERT“. Jeder Export markiert die enthaltenen Drafts.
   Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.

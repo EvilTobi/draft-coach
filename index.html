@@ -684,6 +684,9 @@ function mapFit(b,map){
   const r=map.st&&map.st[b.name];
   if(r&&r.n>=40){ const d=r.wr-.5; s+=d*(map.mode==="ko"&&r.n>=500?18:10)+Math.min(1.2,Math.sqrt((r.pr||0)+(r.br||0))*1.5);
     if(d>=.03)why.push(["+",`Map-Winrate ${pct1(r.wr)}`]); if(d<=-.03)why.push(["-",`Map-Winrate nur ${pct1(r.wr)}`]); }
+  // Nutzer: Brawler, die auf der Map kaum jemand spielt (Chuck auf Triple Dribble, R-T in Brawl Ball), nicht vorschlagen
+  if(map.st&&!mb&&i<0){ const pr=r?r.pr||0:0; if(pr<.035){ s-=pr<.005?7:pr<.015?4.5:2.5;
+    why.push(["-",`auf ${map.name} kaum gespielt (${(pr*100).toFixed(1).replace(".",",")} % Pickrate)`]) } }
   return {s,why};
 }
 const power = (b,map) => b.meta*.55 + mapFit(b,map).s;
@@ -758,6 +761,7 @@ function slotPlan(slot,team){ // was zählt an dieser Draft-Position
   };
 }
 // Nutzer spielt Squeak gern: auf Maps, wo er oft gepickt wird (Top 12 der Pickrate), öfter vorschlagen und bannen
+const mapPr = (map,n) => !map.st ? 1 : (map.st[n]||{}).pr||0; // Pickrate auf der Map (Anteil der Spiele)
 function popRank(map,n){ if(!map.st||!map.st[n]) return 99; const all=Object.entries(map.st).filter(([k,x])=>x.n>=50).sort((a,b)=>b[1].pr-a[1].pr); const i=all.findIndex(x=>x[0]===n); return i<0?99:i+1 }
 function score(name,map,mates,enemies,slot,team){
   ONWATER=WATER_MAPS.includes(map.name);
@@ -882,7 +886,7 @@ function score(name,map,mates,enemies,slot,team){
   // Gegner haben noch den Last Pick: ein Team ohne Schutz vor Werfern wird von einem Werfer-Last-Pick bestraft
   if(plan.later>0&&slot>=3&&tm.length){
     const rB=threats(tm,map).R, rA=threats(tm.concat([b]),map).R;
-    const stopsR = isSM(b)||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&b.cls!=="T"&&map.walls>=1);
+    const stopsR = b.cls==="A"||(inL(SPACE_MAKERS,b)&&mapPr(map,b.name)>=.035)||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&b.cls!=="T"&&map.walls>=1);
     if(stopsR&&rB>=.6&&rA<=rB-.3){ s+=1.5; why.unshift(["+","verhindert einen Werfer-Last-Pick der Gegner"]) }
     else if(slot===4&&rA>=.75){ s-=3; why.unshift(["-","Gegner können mit Werfer als Last Pick kontern"]) }
   }
@@ -917,13 +921,16 @@ function score(name,map,mates,enemies,slot,team){
   if(b.cls==="T"&&!inL(SPACE_MAKERS,b)){ const sm=enB.filter(isSM);
     if(sm.length&&!enB.some(isAT)){ s+=2; why.unshift(["+",`${sm.map(e=>e.name).join(" und ")} ${sm.length>1?"kommen":"kommt"} gegen viel HP nicht an (Gegner ohne Anti-Tank)`]) } }
   // Aggro-Modi: Ohne Anti-Tank geht es nicht, drei Anti-Tanks sind zu viel (Bobby)
-  if(AGGRO_MODES.includes(map.mode)&&tm.length){ const at=tm.filter(isAT).length;
-    if(!at&&isAT(b)&&(slot===3||slot===4||tm.length===2)){ s+=2.5; why.unshift(["+","Team braucht noch einen Anti-Tank"]) }
-    else if(!at&&!isAT(b)&&tm.length===2){ s-=1.5; why.push(["-","Team hätte dann keinen Anti-Tank"]) }
-    else if(at>=2&&isAT(b)){ s-=2; why.push(["-","schon zwei Anti-Tanks im Team"]) } }
+  if(AGGRO_MODES.includes(map.mode)&&tm.length){ const atM=x=>isAT(x)&&!(x.name==="R-T"&&map.mode!=="hz"), at=tm.filter(atM).length;
+    const ricoW=b.name==="Rico"&&map.walls>=2&&!enB.some(e=>e.tags.includes("w"));
+    if(!at&&atM(b)&&(slot===3||slot===4||tm.length===2)){ s+=2.5; why.unshift(["+","Team braucht noch einen Anti-Tank"]) }
+    else if(!at&&ricoW&&(slot===3||slot===4||tm.length===2)){ s+=1.2; why.unshift(["+","Rico prallt an den Wänden ab und setzt Tanks zu (Gegner ohne Wallbreak)"]) }
+    else if(!at&&!atM(b)&&b.name!=="Rico"&&tm.length===2){ s-=1.5; why.push(["-","Team hätte dann keinen Anti-Tank"]) }
+    else if(at>=2&&atM(b)){ s-=2; why.push(["-","schon zwei Anti-Tanks im Team"]) } }
   // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
   if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
-    if(inL(CHUCK_DEFENDERS,b)){ s-=2.5; why.unshift(["-","gegen Chuck nicht verteidigen: lieber Schaden auf den Safe"]) }
+    // Nutzer: gegen Chuck plus Assassine (Melodie …) kann sich ein Verteidiger lohnen → kein Abzug
+    if(inL(CHUCK_DEFENDERS,b)&&!enB.some(e=>e.cls==="A")){ s-=2.5; why.unshift(["-","gegen Chuck nicht verteidigen: lieber Schaden auf den Safe"]) }
     else if(inL(HEIST_HYPER,b)){ s+=1.5; why.unshift(["+","lädt die Hyper an Chuck und gibt Schaden auf den Safe zurück"]) } }
   // Hank braucht Wände: gegnerischer Wallbreak nimmt ihm die Deckung (Nutzer)
   if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak: Hank verliert seine Deckung`]) }
@@ -1238,7 +1245,9 @@ const CHANGELOG = [
   "Edgar kontert Juju, außer auf Maps mit Wasser (Parallel Plays).",
   "Draft-Guide (Bobby): Space Maker wie Bull, Mina, Chuck, Carl, Sam, Gigi schützen vor Werfern. Tanks gegen Space Maker, wenn die Gegner keinen Anti-Tank haben.",
   "Brawl Ball, Gem Grab, Hot Zone, Heist: Das Team braucht einen Anti-Tank, drei sind zu viel.",
-  "Heist gegen Chuck: keine Verteidiger (Angelo, R-T, Belle …), lieber Schaden auf den Safe (8-Bit, Colette, Nita)."]},
+  "Heist gegen Chuck: keine Verteidiger (Angelo, R-T, Belle …), lieber Schaden auf den Safe (8-Bit, Colette, Nita). Hat der Gegner zusätzlich eine Assassine (z. B. Melodie), sind Verteidiger wieder erlaubt.",
+  "Brawler, die auf einer Map kaum jemand spielt (unter 3,5 % Pickrate, z. B. Chuck auf Triple Dribble), werden deutlich seltener vorgeschlagen.",
+  "R-T zählt in Gem Grab, Brawl Ball und Heist nicht als Anti-Tank. Rico verliert keine Punkte als Nicht-Anti-Tank und gilt auf Maps mit vielen Wänden ohne Gegner-Wallbreak als halber Anti-Tank."]},
  {v:"202611231838", d:"23.11.2026", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand 23.11.2026): Ranked-Drafts vom 16.–23.11. (DraftMeta) und Pro-Scrims vom 15.–23.11. (Corestats). Das Brawl-Atlas-Modell bleibt bis zum Atlas-Update gleich."]},
  {v:"202611222130", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
   "Solange die Gegner noch picken, prüft der Coach bei jedem Brawler, welche seiner harten Konter noch frei sind. Der stärkste freie Konter zählt voll, weitere nur wenig. Sind alle Konter gebannt oder gepickt, gibt es einen Bonus.",
