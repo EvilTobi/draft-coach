@@ -102,6 +102,7 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   R-T zählt nur in Hot Zone (+ Knockout/Bounty) als Anti-Tank; Rico nie −1,5, auf Maps mit Wänden (walls ≥ 2) ohne Gegner-Wallbreak +1,2.
 - Nutzer 23.11.: Brawler, die auf der Map kaum gespielt werden, abwerten (in `mapFit`, gilt auch für Bans): Pickrate < 3,5 % −2,5,
   < 1,5 % −4,5, < 0,5 % −7 (außer Top-Picks der Map und `MAP_BONUS`). Pickrate = Anteil der Spiele (Summe aller Brawler ≈ 6).
+  Chuck außerhalb von Heist/Hot Zone −8. Shelly in Heist −4 bis −10 (je seltener gepickt, desto mehr), außer Gegner haben 3 Tanks/Nahkämpfer.
 - Export „Neu seit letztem Export“ (`EXPMARK` in localStorage `rdc-expmark`): nur neue oder geänderte Drafts (Ergebnis/Notiz),
   geänderte mit „AKTUALISIERT“. Jeder Export markiert die enthaltenen Drafts.
   Willow ist Anti-Assassine (Super), Werfer-Duo mit ihr und früher Pick nur halber Abzug.

@@ -927,6 +927,11 @@ function score(name,map,mates,enemies,slot,team){
     else if(!at&&ricoW&&(slot===3||slot===4||tm.length===2)){ s+=1.2; why.unshift(["+","Rico prallt an den Wänden ab und setzt Tanks zu (Gegner ohne Wallbreak)"]) }
     else if(!at&&!atM(b)&&b.name!=="Rico"&&tm.length===2){ s-=1.5; why.push(["-","Team hätte dann keinen Anti-Tank"]) }
     else if(at>=2&&atM(b)){ s-=2; why.push(["-","schon zwei Anti-Tanks im Team"]) } }
+  // Nutzer: Chuck wird fast nur in Heist und Hot Zone gespielt → in anderen Modi weit nach unten
+  if(b.name==="Chuck"&&!["heist","hz"].includes(map.mode)){ s-=8; why.unshift(["-","Chuck wird fast nur in Heist und Hot Zone gespielt"]) }
+  // Nutzer: Shelly in Heist nur gegen drei Tanks/Nahkämpfer; Abzug umso größer, je seltener sie auf der Map gespielt wird
+  if(b.name==="Shelly"&&map.mode==="heist"&&enB.filter(e=>e.cls==="T"||e.range===1).length<3){
+    s-=4+6*(1-Math.min(1,mapPr(map,"Shelly")/.05)); why.unshift(["-","Shelly in Heist nur gegen drei Tanks oder Nahkämpfer"]) }
   // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
   if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
     // Nutzer: gegen Chuck plus Assassine (Melodie …) kann sich ein Verteidiger lohnen → kein Abzug
@@ -1247,6 +1252,7 @@ const CHANGELOG = [
   "Brawl Ball, Gem Grab, Hot Zone, Heist: Das Team braucht einen Anti-Tank, drei sind zu viel.",
   "Heist gegen Chuck: keine Verteidiger (Angelo, R-T, Belle …), lieber Schaden auf den Safe (8-Bit, Colette, Nita). Hat der Gegner zusätzlich eine Assassine (z. B. Melodie), sind Verteidiger wieder erlaubt.",
   "Brawler, die auf einer Map kaum jemand spielt (unter 3,5 % Pickrate, z. B. Chuck auf Triple Dribble), werden deutlich seltener vorgeschlagen.",
+  "Chuck wird außerhalb von Heist und Hot Zone kaum noch vorgeschlagen. Shelly in Heist nur gegen drei Tanks oder Nahkämpfer.",
   "R-T zählt in Gem Grab, Brawl Ball und Heist nicht als Anti-Tank. Rico verliert keine Punkte als Nicht-Anti-Tank und gilt auf Maps mit vielen Wänden ohne Gegner-Wallbreak als halber Anti-Tank."]},
  {v:"202611231838", d:"23.11.2026", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand 23.11.2026): Ranked-Drafts vom 16.–23.11. (DraftMeta) und Pro-Scrims vom 15.–23.11. (Corestats). Das Brawl-Atlas-Modell bleibt bis zum Atlas-Update gleich."]},
  {v:"202611222130", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
