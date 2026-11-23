@@ -438,7 +438,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611222130"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611231838"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -1196,6 +1196,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"202611231838", d:"23.11.2026", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand 23.11.2026): Ranked-Drafts vom 16.–23.11. (DraftMeta) und Pro-Scrims vom 15.–23.11. (Corestats). Das Brawl-Atlas-Modell bleibt bis zum Atlas-Update gleich."]},
  {v:"202611222130", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
   "Solange die Gegner noch picken, prüft der Coach bei jedem Brawler, welche seiner harten Konter noch frei sind. Der stärkste freie Konter zählt voll, weitere nur wenig. Sind alle Konter gebannt oder gepickt, gibt es einen Bonus.",
   "Ash und Mr. P reagieren dadurch auf Bans: z. B. Ash vor Mr. P, wenn Griff, Emz und El Primo gebannt sind, Edgar aber offen ist.",
