@@ -608,7 +608,9 @@ const SOFT_COUNTERS = {
  "Sam":["Colette","Otis","Doug"], "Lola":["Rico","Willow"], "Pam":["Colette","Jessie","Ziggy","Larry & Lawrie","Sirius","Mr. P"],
  "Jacky":["Emz"], "Ollie":["Bull","Poco","Doug","Trunk","Rosa"], "Janet":["Nani","Belle","Ash","Rosa","Frank"], "Sandy":["Tara","Lou"],
  "Ziggy":["Lily","Kenji","Mina","Alli","Starr Nova","Kaze"], "Clancy":["Rico","Mr. P","Larry & Lawrie"], "Glowy":["Emz","8-Bit","Mr. P","Gale"],
- "Larry & Lawrie":["Mr. P","Mortis","Alli","Bolt","Starr Nova","Kaze","Kenji"], "Crow":["Poco"], "Byron":["Poco"], "Amber":["Poco"]};
+ "Larry & Lawrie":["Mr. P","Mortis","Alli","Bolt","Starr Nova","Kaze","Kenji"], "Crow":["Poco"], "Byron":["Poco"], "Amber":["Poco"],
+ // Video Arthur Brawl Stars (17.11.), mit Daten bestätigt
+ "Penny":["Berry"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"]};
 const SIT_COUNTERS = {
  "Sam":["8-Bit","Emz"], "Lola":["Brock"], "Pam":["Willow","Penny"], "Jacky":["Lumi","Shelly"], "Ollie":["El Primo","Emz"],
  "Janet":["Sprout","Ziggy"], "Sandy":["El Primo","Bo"], "Ziggy":["El Primo","Buzz"], "Clancy":["Willow","8-Bit"], "Glowy":["Poco","Lou"],
@@ -1196,6 +1198,8 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+  "Weitere weiche Konter, bestätigt durch ein Video von Arthur Brawl Stars und unsere Daten: Berry > Penny, Surge > Melodie/Shade/Kenji, Nori > Kaze/Colt."]},
  {v:"202611231838", d:"23.11.2026", t:"Daten aktualisiert", items:["Statistiken neu geladen (Stand 23.11.2026): Ranked-Drafts vom 16.–23.11. (DraftMeta) und Pro-Scrims vom 15.–23.11. (Corestats). Das Brawl-Atlas-Modell bleibt bis zum Atlas-Update gleich."]},
  {v:"202611222130", d:"22.11.2026", t:"Offene Konter für alle Brawler", items:[
   "Solange die Gegner noch picken, prüft der Coach bei jedem Brawler, welche seiner harten Konter noch frei sind. Der stärkste freie Konter zählt voll, weitere nur wenig. Sind alle Konter gebannt oder gepickt, gibt es einen Bonus.",
