@@ -644,6 +644,7 @@ const SPACE_MAKERS = ["Bull","Bibi","Buzz","Carl","Mina","Chuck","Sam","Gigi","D
 const isSM = b => b.cls==="A" || inL(SPACE_MAKERS,b);
 const isAT = b => inL(TANK_KILLERS,b) || b.tags.includes("at"); // Anti-Tank
 const AGGRO_MODES = ["gem","ball","hz","heist"];
+const GE_STOP = ["Lou","Bo"], GE_OFF = ["Parallel Plays"]; // Gray-Emz-Kombi in Hot Zone
 // Heist gegen Chuck (Bobby): nicht verteidigen, sondern Schaden auf den Safe; Hyper-Brawler laden an Chuck auf
 const CHUCK_DEFENDERS = ["Angelo","R-T","Eve","Belle","Cordelius"], HEIST_HYPER = ["8-Bit","Colette","Nita","Crow"];
 // Harte Konter von Frank (Nutzer: Colette, Lou, Gale; dazu laut Matchup-Daten Otis, Pierce, R-T, Shelly, Emz, Spike, Cosmo)
@@ -936,6 +937,18 @@ function score(name,map,mates,enemies,slot,team){
   // Nutzer: Shelly in Heist nur gegen drei Tanks/Nahkämpfer; Abzug umso größer, je seltener sie auf der Map gespielt wird
   if(b.name==="Shelly"&&map.mode==="heist"&&enB.filter(e=>e.cls==="T"||e.range===1).length<3){
     s-=4+6*(1-Math.min(1,mapPr(map,"Shelly")/.05)); why.unshift(["-","Shelly in Heist nur gegen drei Tanks oder Nahkämpfer"]) }
+  // Gray + Emz in Hot Zone (Nutzer; Daten +3,2 %): Gray-Portal bringt das Team sofort in die Zone, Emz hält sie.
+  // Nur Lou (Super friert ein) und Bo (Minen aufs Portal) stoppen die Kombi. Nicht auf Parallel Plays (Gray kaum gespielt).
+  const gePart={"Gray":"Emz","Emz":"Gray"}[b.name];
+  if(gePart&&map.mode==="hz"&&!GE_OFF.includes(map.name)){
+    const stop=enB.filter(e=>GE_STOP.includes(e.name)), u=used(), free=GE_STOP.filter(n=>!u.has(n.toLowerCase()));
+    if(tm.some(t=>t.name===gePart)){
+      if(stop.length){ s-=2; why.unshift(["-",`${stop.map(e=>e.name).join(" und ")} ${stop.length>1?"stoppen":"stoppt"} die Gray-Emz-Kombi`]) }
+      else if(free.length&&plan.later>0){ s+=1; why.unshift(["+",`Gray + Emz: starke Kombi, aber ${free.join(" und ")} noch frei`]) }
+      else { s+=3; why.unshift(["+","Gray + Emz: Lou und Bo sind weg"]) }
+    } else if((slot===1||slot===3)&&!stop.length&&!free.length&&!u.has(gePart.toLowerCase())){
+      s+=1; why.unshift(["+",`Gray + Emz als Doppel-Pick: Lou und Bo sind weg`]) }
+  }
   // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
   if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
     // Nutzer: gegen Chuck plus Assassine (Melodie …) kann sich ein Verteidiger lohnen → kein Abzug
@@ -998,6 +1011,8 @@ function banPlan(map){
     if(pos===6&&inL(BLIND,b)){s+=.4}
     reserve.forEach(r=>{ if(counter(b,r)>=1.2){s+=1.3;why.unshift("kontert "+r.name)} });
     if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){s+=2.3;why.unshift(`oft gepickt auf ${map.name}`)}
+    // Bann von Lou/Bo öffnet die Gray-Emz-Kombi für euren Doppel-Pick (2+3 bzw. 4+5)
+    if(GE_STOP.includes(b.name)&&map.mode==="hz"&&!GE_OFF.includes(map.name)&&!u.has("gray")&&!u.has("emz")){s+=.8;why.push("Bann öffnet euch die Gray-Emz-Kombi")}
     if(team==="A"&&pos!==1){ if(b.cls==="A"||b.cls==="R"||inL(LASTPICK,b)||(inL(ANTI_TANK,b)&&["ball","heist"].includes(map.mode))){s+=.9;why.unshift("gefährlicher Last Pick der Gegner")} }
     if(pos===1&&(b.cls==="A"||inL(LASTPICK,b))){s+=.4}
     if(team==="A"&&b.cls==="A"&&b.meta>=8&&map.walls>=1){s+=.8; if(!why.includes("gefährlicher Last Pick der Gegner"))why.unshift("gefährlicher Last Pick der Gegner (Wände)")}
@@ -1252,6 +1267,8 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+  "Gray + Emz in Hot Zone (außer Parallel Plays): starke Kombi, wenn Lou und Bo gebannt oder im eigenen Team sind. Hat der Gegner Lou oder Bo, gibt es einen Abzug. Als Doppel-Pick (2+3 oder 4+5) wird der erste Partner schon leicht aufgewertet, und Lou/Bo steigen in den Bann-Vorschlägen."]},
  {v:"202611232331", d:"23.11.2026", t:"Auswertung: Anti-Assassinen-Hinweis, Vision-Gear, Ring of Fire", items:[
   "Ist der Schutz vor Assassinen schwach, zeigt das Panel die beste Option, auch wenn sie nicht in den Top 8 ist.",
   "Auf Maps mit vielen Büschen (Sneaky Fields, Double Swoosh) gibt es den Tipp Vision-Gear. Dry Season gilt jetzt als Map mit wenig Büschen.",

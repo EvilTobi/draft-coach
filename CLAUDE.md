@@ -107,6 +107,9 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Ring of Fire = offen, wenig Wände, viele Büsche außen (Nutzer). Cosmo `MAP_BONUS` Ring of Fire +6 (Nutzer; Daten: 48 % Map-Winrate, verliert gegen Mortis/Edgar/Mandy). Weich: Bo>Amber, Mr. P>Chester;
   situativ: Mina>Amber, Willow>Lou auf Maps mit Wänden (`WALLMAP`). `PLAY_TIPS` Gale>Doug, Colette>8-Bit; Tipp-Paare werden im Spielplan
   bevorzugt zugeteilt. Abgelehnt: Tipp „Lou in die gegnerische Zone“, 8-Bit-Gadget-Tipp, Knockout-Fokus-Tipp.
+- Gray + Emz (Nutzer 23.11., Daten +3,2 %): Hot Zone außer `GE_OFF` (Parallel Plays). Zweiter Partner: Gegner hat Lou/Bo (`GE_STOP`) −2,
+  Lou/Bo noch frei und Gegner picken noch +1, sonst +3. Erster Partner an Pick 2/4 (Doppel-Pick) +1, wenn Lou und Bo weg sind.
+  Bann: Lou/Bo +0,8, solange Gray und Emz frei sind. Mr. P NICHT als Konter der Kombi (Nutzer: Portal-Teleport braucht viel Schaden).
   Chuck außerhalb von Heist/Hot Zone −8. Shelly in Heist −4 bis −10 (je seltener gepickt, desto mehr), außer Gegner haben 3 Tanks/Nahkämpfer.
 - Export „Neu seit letztem Export“ (`EXPMARK` in localStorage `rdc-expmark`): nur neue oder geänderte Drafts (Ergebnis/Notiz),
   geänderte mit „AKTUALISIERT“. Jeder Export markiert die enthaltenen Drafts.
