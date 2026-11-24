@@ -444,7 +444,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611232348"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611242219"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -1298,7 +1298,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
- {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+ {v:"202611242219", d:"24.11.2026", t:"Ergebnisse einfügen", items:[
   "Neu unter „Letzte Drafts“: Ergebnisse einfügen. Die Zeilen aus dem Chat (Kampfprotokoll) tragen Sieg/Niederlage und Notiz automatisch beim passenden Draft ein."]},
  {v:"202611232348", d:"23.11.2026", t:"Gray + Emz in Hot Zone", items:[
   "Gray + Emz in Hot Zone (außer Parallel Plays): starke Kombi, wenn Lou und Bo gebannt oder im eigenen Team sind. Hat der Gegner Lou oder Bo, gibt es einen Abzug. Als Doppel-Pick (2+3 oder 4+5) wird der erste Partner schon leicht aufgewertet, und Lou/Bo steigen in den Bann-Vorschlägen."]},
