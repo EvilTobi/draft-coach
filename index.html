@@ -660,8 +660,8 @@ const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz",
 // Harte Tank-Konter: sind sie noch frei, bestrafen sie einen Tank an Pick 4/5 als Last Pick (Nutzer: Colette gegen Frank)
 const TANK_HARD = ["Colette","Griff","Pierce","Otis","Shelly","R-T","Sirius"];
 // Map-Besonderheiten (Nutzer): Juju wird durch Wasser stärker, auf Parallel Plays auch als First Pick
-const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser auf der Map stärkt Juju"]},
-  "Ring of Fire":{"Cosmo":[6,"offene Map: Cosmo kontrolliert die Zone, sein Gadget schützt vor Dash-Brawlern"]}};
+const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser-Map"]},
+  "Ring of Fire":{"Cosmo":[6,"Zonen-Kontrolle"]}};
 // Brawler mit vielen Projektilen: laden Gigis Super schnell auf (Nutzer-Erfahrung)
 const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit"]; // nicht Bull/Darryl: gegen die verliert Gigi im Nahkampf
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
@@ -678,7 +678,7 @@ function mapFit(b,map){
   let s=0, why=[];
   const mf=(MODE_FIT[map.mode]||{})[b.cls]||0; s+=mf;
   if(mf>=1.5) why.push(["+","stark in "+MODES[map.mode]]);
-  if(mf<=-1) why.push(["-",b.cls==="T"&&["ko","bounty"].includes(map.mode)?`Tanks sind in ${MODES[map.mode]} schwach`:"schwach in "+MODES[map.mode]]);
+  if(mf<=-1) why.push(["-",b.cls==="T"&&["ko","bounty"].includes(map.mode)?`Tank in ${MODES[map.mode]}`:"schwach in "+MODES[map.mode]]);
   if((map.mode==="ball"||map.mode==="heist")&&b.tags.includes("w")) s+=.5;
   const o=map.open-1, w=map.walls-1, bu=map.bush/2;
   let t=0;
@@ -692,14 +692,14 @@ function mapFit(b,map){
   if(t>=1) why.push(["+", map.open===2?"offene Map":map.walls===2?"viele Wände":"Map-Aufbau passt"]);
   if(t<=-1) why.push(["-", map.open===2?"zu offen":"Map-Aufbau ungünstig"]);
   const i=map.picks.findIndex(p=>p.toLowerCase()===b.name.toLowerCase());
-  if(i>=0){s+=3-i*.25; why.unshift(["+","Top-Pick #"+(i+1)+" der Map"])}
+  if(i>=0){s+=3-i*.25; why.unshift(["+","Top-Pick #"+(i+1)])}
   const mb=(MAP_BONUS[map.name]||{})[b.name]; if(mb){s+=mb[0]; why.unshift(["+",mb[1]])}
   const r=map.st&&map.st[b.name];
   if(r&&r.n>=40){ const d=r.wr-.5; s+=d*(map.mode==="ko"&&r.n>=500?18:10)+Math.min(1.2,Math.sqrt((r.pr||0)+(r.br||0))*1.5);
     if(d>=.03)why.push(["+",`Map-Winrate ${pct1(r.wr)}`]); if(d<=-.03)why.push(["-",`Map-Winrate nur ${pct1(r.wr)}`]); }
   // Nutzer: Brawler, die auf der Map kaum jemand spielt (Chuck auf Triple Dribble, R-T in Brawl Ball), nicht vorschlagen
   if(map.st&&!mb&&i<0){ const pr=r?r.pr||0:0; if(pr<.035){ s-=pr<.005?7:pr<.015?4.5:2.5;
-    why.push(["-",`auf ${map.name} kaum gespielt (${(pr*100).toFixed(1).replace(".",",")} % Pickrate)`]) } }
+    why.push(["-",`kaum gespielt (${(pr*100).toFixed(1).replace(".",",")} %)`]) } }
   return {s,why};
 }
 const power = (b,map) => b.meta*.55 + mapFit(b,map).s;
@@ -764,7 +764,7 @@ function threats(team,map){
   };
 }
 const THREAT_LABEL = {A:"Assassinen",R:"Werfer",T:"Tanks"};
-const GAIN_LABEL = {A:"schützt vor Assassinen",R:"schützt vor Werfern",T:"Schaden gegen Tanks"};
+const GAIN_LABEL = {A:"Schutz vor Assassinen",R:"Schutz vor Werfern",T:"Schaden gegen Tanks"};
 function slotPlan(slot,team){ // was zählt an dieser Draft-Position
   const later=ORDER.slice(slot+1).filter(t=>t!==team).length; // Gegner-Picks, die noch kommen
   return {
@@ -782,7 +782,7 @@ function score(name,map,mates,enemies,slot,team){
   const b=get(name), plan=slotPlan(slot,team);
   let s=b.meta*.55, why=[];
   if(b.meta>=8.5) why.push(["+","Top-Meta"]);
-  if(TRIAL.includes(b.name)) why.push(["t","Trial: für alle verfügbar"]);
+  if(TRIAL.includes(b.name)) why.push(["t","Trial"]);
   const f=mapFit(b,map); s+=f.s; why=why.concat(f.why);
   // Pick-Position: Keine Quelle liefert Winrates je Pick-Position. Konter-Picks (Assassinen, Last-Pick-Brawler, Gigi) werden
   // auch früh gepickt und verlieren dann öfter, ihre Map-Winrate ist für den Last Pick daher zu niedrig. Beim Last Pick zählt
@@ -790,7 +790,7 @@ function score(name,map,mates,enemies,slot,team){
   const mrw=map.st&&map.st[b.name];
   if(slot===5&&mrw&&mrw.n>=40&&mrw.wr<.5&&(b.cls==="A"||inL(LASTPICK,b)||b.name==="Gigi")){
     const back=(.5-mrw.wr)*(map.mode==="ko"&&mrw.n>=500?18:10)*.5; s+=back;
-    if(back>=.2) why.push(["+","schwache Map-Winrate zählt als später Konter-Pick nur halb"]) }
+    if(back>=.2) why.push(["+","Konter-Pick: Winrate halb"]) }
   // Konter
   let countered=0;
   const enB=enemies.map(get), nSnip=enB.filter(e=>e.cls==="M"||(e.range===3&&e.cls==="D")).length;
@@ -813,14 +813,14 @@ function score(name,map,mates,enemies,slot,team){
     const v=VS[b.name+"|"+e.name], tag=v?` (${v[0]>0?"+":""}${Math.round(v[0]*100)}%)`:"";
     const dataNeg=v&&v[0]<=-.01, dataPos=v&&v[0]>=.01;
     if(c>=1&&!dataNeg){countered++;why.push(["+","kontert "+e.name+tag])} else if(c<=-.8&&!dataPos)why.push(["-","schwach gegen "+e.name+tag]);});
-  if(slot===5&&countered>=2){s+=.5*countered;why.unshift(["+",`kontert ${countered} von ${enemies.length} Gegnern`])}
+  if(slot===5&&countered>=2){s+=.5*countered;why.unshift(["+",`kontert ${countered}/${enemies.length} Gegner`])}
   // Rollen im Team
   const tm=mates.map(get);
   tm.forEach(t=>{const v=SYN[synKey(b.name,t.name)], m=modelSyn(b.name,t.name); s+=m*8;
-    if(v){s+=v[0]*8; why.push([v[0]>0?"+":"-",`${v[0]>0?"starke Kombi":"schwache Kombi"} mit ${t.name} (${v[0]>0?"+":""}${Math.round(v[0]*100)}%)`])}});
+    if(v){s+=v[0]*8; why.push([v[0]>0?"+":"-",`Kombi ${t.name} (${v[0]>0?"+":""}${Math.round(v[0]*100)}%)`])}});
   if(["T","A","R","M"].includes(b.cls)&&tm.some(t=>t.cls===b.cls)){s-=(b.cls==="M"&&map.open===2)?.4:1.2;why.push(["-","doppelte Rolle ("+CLS[b.cls]+")"])}
-  if(b.range===3&&map.open>=1&&tm.length&&!tm.some(t=>t.range===3)){s+=.8;why.push(["+","bringt Reichweite ins Team"])}
-  if(b.cls==="S"&&["gem","hz","ko"].includes(map.mode)&&tm.length&&!tm.some(t=>t.cls==="S")){s+=.7;why.push(["+","Team hat keinen Support"])}
+  if(b.range===3&&map.open>=1&&tm.length&&!tm.some(t=>t.range===3)){s+=.8;why.push(["+","bringt Reichweite"])}
+  if(b.cls==="S"&&["gem","hz","ko"].includes(map.mode)&&tm.length&&!tm.some(t=>t.cls==="S")){s+=.7;why.push(["+","Support fehlt"])}
   if(b.tags.includes("w")&&["ball","heist"].includes(map.mode)&&tm.length&&!tm.some(t=>t.tags.includes("w"))){s+=.6;why.push(["+","Wandbrecher fehlt noch"])}
   if(map.mode==="ball"&&b.cls==="T"&&tm.length===2&&!tm.some(t=>t.cls==="T")){s+=.5}
   // Absicherung gegen spätere Gegner-Picks
@@ -830,7 +830,7 @@ function score(name,map,mates,enemies,slot,team){
     for(const k of ["A","R","T"]){
       const d=before[k]-after[k]; gain+=d+(after[k]*-.35);
       if(d>=.3&&(tm.length||k==="T")) why.push(["+",GAIN_LABEL[k]]);
-      if(tm.length===2&&after[k]>=.75) why.push(["-",`Team anfällig für ${THREAT_LABEL[k]}`]);
+      if(tm.length===2&&after[k]>=.75) why.push(["-",`anfällig: ${THREAT_LABEL[k]}`]);
     }
     s+=gain*plan.riskW*1.6;
   }
@@ -839,44 +839,44 @@ function score(name,map,mates,enemies,slot,team){
   const snipers=en.filter(e=>e.cls==="M"||(e.range===3&&e.cls==="D")).length;
   const wb=en.some(e=>e.tags.includes("w"));
   const shortR = b.range===1 || b.cls==="A";
+  const beatsAll = en.length>=2&&en.every(e=>{const m=matchup(b.name,e.name);return m.n>=150&&m.d>=.02});
   if(b.cls==="A"){
-    if(slot<=2){s-=1.8;why.push(["-","Assassine erst spät picken"])}
+    if(slot<=2){s-=1.8;why.push(["-","Assassine zu früh"])}
     else if(slot===3||(slot===4&&plan.later>0)){const ko=["ko","bounty"].includes(map.mode);
       // Nutzer: Schlägt die Assassine alle sichtbaren Gegner laut Daten (je ≥ +2 %), zählt der Abzug nur halb
-      const beats=en.length>=2&&en.every(e=>{const m=matchup(b.name,e.name);return m.n>=150&&m.d>=.02});
-      s-=(ko?1.5:.9)*(beats?.5:1);
-      why.push(beats?["+",`schlägt alle bisherigen Gegner: ${ko?`in ${MODES[map.mode]} `:""}trotz Gegner-Last-Pick vertretbar`]:["-",ko?`Assassine vor dem Gegner-Last-Pick: in ${MODES[map.mode]} riskant`:"Assassine besser später"])}
+      s-=(ko?1.5:.9)*(beatsAll?.5:1);
+      why.push(beatsAll?["+","schlägt alle Gegner"]:["-",ko?"riskant vor Last Pick":"Assassine zu früh"])}
     // Last Pick: Assassinen deutlich aufwerten, wenn noch keiner im Team ist (sonst kontert ein Tank/Damage Dealer beide)
-    if(slot===5&&!noHide&&!tm.some(t=>t.cls==="A")){s+=1.5;why.unshift(["+","Last Pick: Assassine kann nicht mehr gekontert werden"])}
+    if(slot===5&&!noHide&&!tm.some(t=>t.cls==="A")){s+=1.5;why.unshift(["+","Last Pick: sicher"])}
     if(diveSemi){s-=3;why.unshift(["-",`${enB.find(e=>e.tags.includes("w")).name} hat Wallbreak: Assassine nur mit Vorsicht`])}
     else if(diveOpen){
-      if(snipers>=2){s+=.6;why.unshift(["+","Gegner ohne Wallbreak und ohne Schutz vor Assassinen"])}
+      if(snipers>=2){s+=.6;why.unshift(["+","Gegner ungeschützt"])}
       if(map.open===2)s-=.4;
     } else {
-      if(map.open===2){s-=1.2;why.unshift(["-","kann sich auf offener Map nicht verstecken"])}
-      if(snipers>=2){s-=1.8;why.unshift(["-",`Gegner haben ${snipers} Sniper mit ${enWB?"Wallbreak":"Schutz"}`])}
+      if(map.open===2){s-=beatsAll?.6:1.2; if(!why.some(w=>w[1]==="zu offen")) why.unshift(["-","offene Map"])}
+      if(snipers>=2){s-=1.8;why.unshift(["-",`${snipers} Sniper mit ${enWB?"Wallbreak":"Schutz"}`])}
       else if(snipers===1&&map.open>=1){s-=.6}
       if(wb&&map.walls<=1){s-=1;why.push(["-","Gegner haben Wallbreak"])}
     }
-  } else if(shortR&&map.open===2&&slot>=2&&slot<=3){s-=1;why.push(["-","ohne Reichweite auf offener Map"])}
+  } else if(shortR&&map.open===2&&slot>=2&&slot<=3){s-=1;why.push(["-","zu wenig Reichweite"])}
   // Zwei Werfer nur als eigener Last Pick und nur, wenn die Gegner keinen Assassinen haben
   // Mr. P zählt als werfer-ähnlich nur halb
   if(lobby(b)&&tm.some(lobby)){
     const o=tm.find(lobby), wil=b.name==="Willow"||o.name==="Willow", half=!isThrower(b)||!isThrower(o)||wil, other=o.name, enA=enB.find(e=>e.cls==="A");
     // Willow kontrolliert Assassinen mit ihrer Super: Werfer-Duo mit ihr nur halb so riskant (Nutzer)
     const wd=wil&&isThrower(b)&&isThrower(o), lbl=wd?"Werfer-Duo":half?"werfer-ähnliches Duo":"zweiter Werfer";
-    if(plan.later>0){s-=half?3:6;why.unshift(["-",wd?`Werfer-Duo mit ${other}: Willows Super hält Assassinen auf, kleines Restrisiko`:`${lbl} mit ${other}: Gegner können mit Assassine kontern`])}
-    else if(enA){s-=half?2.5:5;why.unshift(["-",`${lbl} mit ${other}, Gegner haben ${enA.name}`])}
-    else why.push(["+",`${lbl} möglich: Gegner haben keinen Assassinen`]);
+    if(plan.later>0){s-=half?3:6;why.unshift(["-",wd?`Werfer-Duo mit ${other}`:`${lbl} mit ${other}`])}
+    else if(enA){s-=half?2.5:5;why.unshift(["-",`${lbl}, Gegner: ${enA.name}`])}
+    else why.push(["+",`${lbl} ok`]);
   }
   // Mr. P lädt seine Super schnell gegen Gegner mit mittlerer Range oder viel HP (sie „füttern“ ihn);
   // gegen Sniper auf offenen Maps kommt er wegen geringerer Reichweite kaum zum Treffen und stirbt schnell
   if(b.name==="Mr. P"){
     const feed=enB.filter(holdsSpace), snip=enB.filter(e=>e.cls==="M"||(e.range===3&&e.cls==="D"));
-    if(feed.length){ s+=Math.min(1.5,.7*feed.length); why.push(["+",`${feed.map(e=>e.name).join(" und ")} ${feed.length>1?"füttern":"füttert"} seine Super`]) }
+    if(feed.length){ s+=Math.min(1.5,.7*feed.length); why.push(["+",`Super-Futter: ${feed.map(e=>e.name).join(", ")}`]) }
     if(snip.length&&map.open>=1){ s-=(map.open===2?1.3:.6)*snip.length;
-      why.unshift(["-",`${snip.map(e=>e.name).join(" und ")} ${snip.length>1?"halten":"hält"} ihn ${map.open===2?"auf offener Map fern":"mit mehr Reichweite auf Abstand"}`]) }
-    else if(map.open===2&&plan.later>0&&snip.length===0){ s-=.5; why.push(["-","auf offener Map anfällig für Gegner-Sniper"]) }
+      why.unshift(["-",`mehr Range: ${snip.map(e=>e.name).join(", ")}`]) }
+    else if(map.open===2&&plan.later>0&&snip.length===0){ s-=.5; why.push(["-","Sniper-Gefahr"]) }
   }
   // Gegner mit wenig Schaden: Ein Tank mit viel HP kommt durch, mit Max (Speed) oder Heiler noch besser
   const lowDps=enB.filter(e=>dps(e)<=1.5&&!inL(TANK_KILLERS,e)&&!e.tags.includes("at"));
@@ -885,95 +885,95 @@ function score(name,map,mates,enemies,slot,team){
     const killer=enB.find(e=>inL(TANK_KILLERS,e)||e.tags.includes("at"));
     let bonus=lowDps.length===3?2.2:enDone?1.4:plan.later>0?.7:1;
     if(killer){ bonus*=.35; why.push(["-",`${killer.name} stoppt Tanks`]) }
-    s+=bonus; why.unshift(["+",`Gegner mit wenig Schaden (${lowDps.map(e=>e.name).join(", ")})`]);
-    if(sup.length){s+=.8; why.push(["+",`${sup[0].name} unterstützt den Tank`])}
+    s+=bonus; why.unshift(["+",`wenig Schaden: ${lowDps.map(e=>e.name).join(", ")}`]);
+    if(sup.length){s+=.8; why.push(["+",`Support: ${sup[0].name}`])}
   }
   if((b.tags.includes("h")||b.name==="Max")&&lowDps.length>=2&&tm.some(t=>t.cls==="T")){
     s+=1; why.push(["+",`${b.name==="Max"?"Speed":"Heilung"} für euren Tank gegen wenig Schaden`]) }
   // Frank: auf offenen Maps und in Heist schwach. Nur als Last Pick ohne harten Konter beim Gegner,
   // oder an Pick 5, wenn alle harten Konter gebannt/gepickt sind
   if(b.name==="Frank"){
-    if(map.open===2||map.mode==="heist"){ s-=1.5; why.unshift(["-",map.mode==="heist"?"Frank ist in Heist schwach":"Frank auf offener Map schwach"]) }
+    if(map.open===2||map.mode==="heist"){ s-=1.5; why.unshift(["-",map.mode==="heist"?"schwach in Heist":"offene Map"]) }
     const u=used(), free=FRANK_HARD.filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n)), enHard=enB.filter(e=>inL(FRANK_HARD,e));
-    if(enHard.length){ s-=6; why.unshift(["-",`${enHard.map(e=>e.name).join(" und ")} ${enHard.length>1?"kontern":"kontert"} Frank hart`]) }
+    if(enHard.length){ s-=6; why.unshift(["-",`harter Konter: ${enHard.map(e=>e.name).join(", ")}`]) }
     if(plan.later>0){
-      if(free.length){ s-=15; why.unshift(["-",`Frank nur als Last Pick: ${free.slice(0,3).join(", ")}${free.length>3?" …":""} noch frei`]) }
-      else if(!enHard.length) why.push(["+","alle harten Frank-Konter sind weg"]);
-    } else if(!enHard.length) why.push(["+","Gegner haben keinen harten Frank-Konter"]);
+      if(free.length){ s-=15; why.unshift(["-",`Konter frei: ${free.slice(0,3).join(", ")}${free.length>3?" …":""}`]) }
+      else if(!enHard.length) why.push(["+","Konter alle weg"]);
+    } else if(!enHard.length) why.push(["+","kein Frank-Konter"]);
   }
   // Gegner haben noch den Last Pick: ein Team ohne Schutz vor Werfern wird von einem Werfer-Last-Pick bestraft
   if(plan.later>0&&slot>=3&&tm.length){
     const rB=threats(tm,map).R, rA=threats(tm.concat([b]),map).R;
     const stopsR = b.cls==="A"||(inL(SPACE_MAKERS,b)&&mapPr(map,b.name)>=.035)||lobby(b)||inL(FAST_HP,b)||(b.tags.includes("w")&&b.cls!=="T"&&map.walls>=1);
-    if(stopsR&&rB>=.6&&rA<=rB-.3){ s+=1.5; why.unshift(["+","verhindert einen Werfer-Last-Pick der Gegner"]) }
-    else if(slot===4&&rA>=.75){ s-=3; why.unshift(["-","Gegner können mit Werfer als Last Pick kontern"]) }
+    if(stopsR&&rB>=.6&&rA<=rB-.3){ s+=1.5; why.unshift(["+","stoppt Werfer-Last-Pick"]) }
+    else if(slot===4&&rA>=.75){ s-=3; why.unshift(["-","Werfer-Konter droht"]) }
   }
   // Gigi: Gegner mit vielen Projektilen laden ihre Super schnell auf
   // nur als 5. oder Last Pick weit oben, wenn die Gegner mindestens einen passenden Brawler haben
   if(b.name==="Gigi"){ const mp=enB.filter(e=>inL(MULTI_PROJ,e));
-    if(mp.length&&slot>=3){ s+=Math.min(7,4+1.5*(mp.length-1))+(slot===5&&mp.length>=2?3.5:0); why.unshift(["+",`${mp.map(e=>e.name).join(" und ")} ${mp.length>1?"laden":"lädt"} Gigis Super schnell auf (viele Projektile)`]) }
-    else { s-=3; why.push(["-","Gigi erst ab Pick 4 gegen Brawler mit vielen Projektilen"]) } }
+    if(mp.length&&slot>=3){ s+=Math.min(7,4+1.5*(mp.length-1))+(slot===5&&mp.length>=2?3.5:0); why.unshift(["+",`Super-Futter: ${mp.map(e=>e.name).join(", ")}`]) }
+    else { s-=3; why.push(["-","Gigi erst später"]) } }
   // Werfer früh (Pick 1–3): Assassinen sind noch frei und kontern ihn (Nutzer). Mr. P nur leicht. Ausnahme: Map-Bonus (Juju auf Parallel Plays)
   if(lobby(b)&&b.name!=="Mr. P"&&slot<=2&&!(MAP_BONUS[map.name]||{})[b.name]){
     const u=used(), freeA=NAMES.filter(n=>!u.has(n.toLowerCase())).map(get).filter(x=>x.cls==="A"&&x.meta>=7);
     if(freeA.length){ const pen=(1+.5*Math.min(3,freeA.length))*(!isThrower(b)?.25:b.name==="Willow"?.5:1); s-=pen;
-      if(pen>=1) why.unshift(["-",`Werfer erst später: ${freeA.slice(0,3).map(x=>x.name).join(", ")}${freeA.length>3?" …":""} noch frei`]) }
+      if(pen>=1) why.unshift(["-",`Assassinen frei: ${freeA.slice(0,3).map(x=>x.name).join(", ")}${freeA.length>3?" …":""}`]) }
   }
   // Tank an Pick 4/5, Gegner haben noch den Last Pick: freie harte Tank-Konter bestrafen ihn (Nutzer: Colette gegen Frank).
   // Mit einem zweiten Tank im Team halb so schlimm (Nutzer: „zu viel HP für Colette“). Frank hat eigene Regel.
   if(b.cls==="T"&&b.name!=="Frank"&&b.name!=="Ash"&&(slot===3||slot===4)&&plan.later>0){
     const u=used(), free=TANK_HARD.filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
     if(free.length){ const pen=(free.length>=2?3.5:2)*(tm.some(t=>t.cls==="T")?.5:1); s-=pen;
-      why.unshift(["-",`Gegner-Last-Pick: ${free.slice(0,3).join(", ")}${free.length>3?" …":""} ${free.length>1?"kontern":"kontert"} Tanks`]) }
+      why.unshift(["-",`Tank-Konter frei: ${free.slice(0,3).join(", ")}${free.length>3?" …":""}`]) }
   }
   // Ash: Mit Super blocken seine Ratten Einzelschüsse, vor allem in Gem Grab und Brawl Ball stark (Nutzer)
   if(b.name==="Ash"){ const pr=enB.filter(e=>inL(ASH_PREY,e));
     if(pr.length){ const v=Math.min(6,3+1.5*(pr.length-1))*(["gem","ball"].includes(map.mode)?1:.5); s+=v;
-      why.unshift(["+",`Ashs Ratten blocken die Einzelschüsse von ${pr.map(e=>e.name).join(" und ")}`]) } }
+      why.unshift(["+",`Ratten blocken ${pr.map(e=>e.name).join(", ")}`]) } }
   // Squeak (Nutzer-Favorit): auf Maps, wo er oft gepickt wird, aufwerten; noch mehr, wenn Assassinen ihn nicht mehr kontern können
-  if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){ s+=3; why.unshift(["+",`auf ${map.name} oft gepickt`]);
+  if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){ s+=3; why.unshift(["+","oft gepickt"]);
     const u=used(), freeA=(COUNTERED_BY.Squeak||[]).filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
-    if(slot===5){ s+=1; why.push(["+","Last Pick: Assassinen können Squeak nicht mehr kontern"]) }
-    else if(plan.later>0&&!freeA.length){ s+=1; why.push(["+","alle Assassinen-Konter gebannt oder gepickt"]) } }
+    if(slot===5){ s+=1; why.push(["+","Last Pick: sicher"]) }
+    else if(plan.later>0&&!freeA.length){ s+=1; why.push(["+","Konter alle weg"]) } }
   // Tank gegen Space Maker ohne Anti-Tank beim Gegner (Bobby; Daten: Tanks +2,8 % gegen Space Maker)
   if(b.cls==="T"&&!inL(SPACE_MAKERS,b)){ const sm=enB.filter(isSM);
-    if(sm.length&&!enB.some(isAT)){ s+=2; why.unshift(["+",`${sm.map(e=>e.name).join(" und ")} ${sm.length>1?"kommen":"kommt"} gegen viel HP nicht an (Gegner ohne Anti-Tank)`]) } }
+    if(sm.length&&!enB.some(isAT)){ s+=2; why.unshift(["+","Gegner ohne Anti-Tank"]) } }
   // Aggro-Modi: Ohne Anti-Tank geht es nicht, drei Anti-Tanks sind zu viel (Bobby)
   if(AGGRO_MODES.includes(map.mode)&&tm.length){ const atM=x=>isAT(x)&&!(x.name==="R-T"&&map.mode!=="hz"), at=tm.filter(atM).length;
     const ricoW=b.name==="Rico"&&map.walls>=2&&!enB.some(e=>e.tags.includes("w"));
-    if(!at&&atM(b)&&(slot===3||slot===4||tm.length===2)){ s+=2.5; why.unshift(["+","Team braucht noch einen Anti-Tank"]) }
-    else if(!at&&ricoW&&(slot===3||slot===4||tm.length===2)){ s+=1.2; why.unshift(["+","Rico prallt an den Wänden ab und setzt Tanks zu (Gegner ohne Wallbreak)"]) }
-    else if(!at&&!atM(b)&&b.name!=="Rico"&&tm.length===2){ s-=1.5; why.push(["-","Team hätte dann keinen Anti-Tank"]) }
-    else if(at>=2&&atM(b)){ s-=2; why.push(["-","schon zwei Anti-Tanks im Team"]) } }
+    if(!at&&atM(b)&&(slot===3||slot===4||tm.length===2)){ s+=2.5; why.unshift(["+","Anti-Tank fehlt"]) }
+    else if(!at&&ricoW&&(slot===3||slot===4||tm.length===2)){ s+=1.2; why.unshift(["+","Abpraller gegen Tanks"]) }
+    else if(!at&&!atM(b)&&b.name!=="Rico"&&tm.length===2){ s-=1.5; why.push(["-","kein Anti-Tank"]) }
+    else if(at>=2&&atM(b)){ s-=2; why.push(["-","schon 2 Anti-Tanks"]) } }
   // Nutzer: Chuck wird fast nur in Heist und Hot Zone gespielt → in anderen Modi weit nach unten
-  if(b.name==="Chuck"&&!["heist","hz"].includes(map.mode)){ s-=8; why.unshift(["-","Chuck wird fast nur in Heist und Hot Zone gespielt"]) }
+  if(b.name==="Chuck"&&!["heist","hz"].includes(map.mode)){ s-=8; why.unshift(["-","nur Heist/Hot Zone"]) }
   // Nutzer: Shelly in Heist nur gegen drei Tanks/Nahkämpfer; Abzug umso größer, je seltener sie auf der Map gespielt wird
   if(b.name==="Shelly"&&map.mode==="heist"&&enB.filter(e=>e.cls==="T"||e.range===1).length<3){
-    s-=4+6*(1-Math.min(1,mapPr(map,"Shelly")/.05)); why.unshift(["-","Shelly in Heist nur gegen drei Tanks oder Nahkämpfer"]) }
+    s-=4+6*(1-Math.min(1,mapPr(map,"Shelly")/.05)); why.unshift(["-","schwach in Heist"]) }
   // Gray + Emz in Hot Zone (Nutzer; Daten +3,2 %): Gray-Portal bringt das Team sofort in die Zone, Emz hält sie.
   // Nur Lou (Super friert ein) und Bo (Minen aufs Portal) stoppen die Kombi. Nicht auf Parallel Plays (Gray kaum gespielt).
   const gePart={"Gray":"Emz","Emz":"Gray"}[b.name];
   if(gePart&&map.mode==="hz"&&!GE_OFF.includes(map.name)){
     const stop=enB.filter(e=>GE_STOP.includes(e.name)), u=used(), free=GE_STOP.filter(n=>!u.has(n.toLowerCase()));
     if(tm.some(t=>t.name===gePart)){
-      if(stop.length){ s-=2; why.unshift(["-",`${stop.map(e=>e.name).join(" und ")} ${stop.length>1?"stoppen":"stoppt"} die Gray-Emz-Kombi`]) }
-      else if(free.length&&plan.later>0){ s+=1; why.unshift(["+",`Gray + Emz: starke Kombi, aber ${free.join(" und ")} noch frei`]) }
-      else { s+=3; why.unshift(["+","Gray + Emz: Lou und Bo sind weg"]) }
+      if(stop.length){ s-=2; why.unshift(["-",`${stop.map(e=>e.name).join(", ")} stoppt Kombi`]) }
+      else if(free.length&&plan.later>0){ s+=1; why.unshift(["+",`Gray + Emz (${free.join(", ")} frei)`]) }
+      else { s+=3; why.unshift(["+","Gray + Emz sicher"]) }
     } else if((slot===1||slot===3)&&!stop.length&&!free.length&&!u.has(gePart.toLowerCase())){
-      s+=1; why.unshift(["+",`Gray + Emz als Doppel-Pick: Lou und Bo sind weg`]) }
+      s+=1; why.unshift(["+","Gray + Emz möglich"]) }
   }
   // Eigener Pick: fehlende Buffies auf dem gewählten Account (Nutzer)
-  if(S.pos===slot+1){ const mb=buffyMiss(b.name); if(mb){ s-=.8*mb; why.unshift(["-",`dir fehlen ${mb} von 3 Buffies`]) } }
+  if(S.pos===slot+1){ const mb=buffyMiss(b.name); if(mb){ s-=.8*mb; why.unshift(["-",`${mb} Buffies fehlen`]) } }
   // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
   if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
     // Nutzer: gegen Chuck plus Assassine (Melodie …) kann sich ein Verteidiger lohnen → kein Abzug
-    if(inL(CHUCK_DEFENDERS,b)&&!enB.some(e=>e.cls==="A")){ s-=2.5; why.unshift(["-","gegen Chuck nicht verteidigen: lieber Schaden auf den Safe"]) }
-    else if(inL(HEIST_HYPER,b)){ s+=1.5; why.unshift(["+","lädt die Hyper an Chuck und gibt Schaden auf den Safe zurück"]) } }
+    if(inL(CHUCK_DEFENDERS,b)&&!enB.some(e=>e.cls==="A")){ s-=2.5; why.unshift(["-","Chuck: lieber Safe-Schaden"]) }
+    else if(inL(HEIST_HYPER,b)){ s+=1.5; why.unshift(["+","Hyper an Chuck"]) } }
   // Hank braucht Wände: gegnerischer Wallbreak nimmt ihm die Deckung (Nutzer)
-  if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak: Hank verliert seine Deckung`]) }
+  if(b.name==="Hank"){ const w=enB.find(e=>e.tags.includes("w")); if(w){ s-=3; why.unshift(["-",`${w.name} hat Wallbreak`]) }
     // Nutzer: kein Hank, solange Griff, Frank oder Colette noch frei sind und die Gegner noch picken
     const u=used(), fh=["Griff","Frank","Colette"].filter(n=>!u.has(n.toLowerCase())&&NAMES.includes(n));
-    if(plan.later>0&&fh.length){ s-=3; why.unshift(["-",`${fh.join(", ")} noch frei: kontern Hank`]) } }
+    if(plan.later>0&&fh.length){ s-=3; why.unshift(["-",`Konter frei: ${fh.join(", ")}`]) } }
   // Antwort-Risiko für alle Brawler (Nutzer): Solange die Gegner noch picken, zählt jeder freie harte Konter als Abzug,
   // gewichtet nach Stärke des Konters. Sind alle harten Konter gebannt/gepickt, gibt es einen Bonus. First Pick nur 35 %
   // (dort steckt das Risiko schon im First-Pick-Wert).
@@ -981,8 +981,8 @@ function score(name,map,mates,enemies,slot,team){
     const fc=freeCounters(b.name,used()), fr=fc.filter(x=>x.free), w=slot===0?.35:1;
     if(fr.length){ // Die Gegner brauchen nur einen Konter: der beste freie zählt voll, weitere nur wenig
       const pen=Math.min(7,1.5*fr[0].v+.35*fr.slice(1,4).reduce((a,x)=>a+x.v,0))*w; s-=pen;
-      if(pen>=.5) why.push(["-",`${fr.slice(0,3).map(x=>x.n).join(", ")}${fr.length>3?" …":""} noch frei: ${fr.length>1?"kontern":"kontert"} ${b.name}`]) }
-    else if(fc.length>=2){ s+=1.5*w; why.push(["+",`alle harten Konter von ${b.name} sind gebannt oder gepickt`]) }
+      if(pen>=.5) why.push(["-",`Konter frei: ${fr.slice(0,3).map(x=>x.n).join(", ")}${fr.length>3?" …":""}`]) }
+    else if(fc.length>=2){ s+=1.5*w; why.push(["+","Konter alle weg"]) }
   }
   // Position
   if(slot===0){
@@ -990,8 +990,8 @@ function score(name,map,mates,enemies,slot,team){
     if(b.cls==="T"){s-=.6;why.push(["-","riskanter Blind-Pick"])}
     const hard=(COUNTERED_BY[b.name]||[]).length; if(hard>=4){s-=.4;why.push(["-","viele harte Konter"])}
   }
-  if(saveLast&&countered>=1){s-=5.5;why.unshift(["-",`für euren Last Pick aufheben (Pick 6), dann kontert ${b.name} ohne Risiko`])}
-  if(inL(LASTPICK,b)){ if(slot===5){s+=.6;why.push(["+","klassischer Last Pick"])} else if(plan.later>0){s-=1.2;why.push(["-","nur als Last Pick sicher"])} }
+  if(saveLast&&countered>=1){s-=5.5;why.unshift(["-","für Last Pick aufheben"])}
+  if(inL(LASTPICK,b)){ if(slot===5){s+=.6;why.push(["+","klassischer Last Pick"])} else if(plan.later>0){s-=1.2;why.push(["-","nur Last Pick"])} }
   // Draft-Siegchance (Modell): wie stark verbessert der Pick die Gewinnwahrscheinlichkeit?
   let dp=null;
   if(MD&&MI[b.name]!=null){ dp=winProb(mates.concat([b.name]),enemies,map)-winProb(mates,enemies,map); s+=dp*40; }
@@ -999,7 +999,7 @@ function score(name,map,mates,enemies,slot,team){
   // First-Pick-Wert: Siegchance des Brawlers, nachdem der Gegner seinen besten Konter gepickt hat
   let fp=null;
   if(slot===0&&MD&&MI[b.name]!=null){ fp=firstPickValue(b.name,map); const q=fpPercentile(fp); s+=(q-.5)*3;
-    if(q>=.8) why.unshift(["+",`schwer zu kontern (Top ${Math.max(1,Math.round((1-q)*100))} % als First Pick)`]); else if(q<=.25) why.push(["-","als First Pick leicht zu kontern"]); }
+    if(q>=.8) why.unshift(["+",`schwer zu kontern (Top ${Math.max(1,Math.round((1-q)*100))} %)`]); else if(q<=.25) why.push(["-","leicht zu kontern"]); }
   return {name:b.name,b,s,why,dp,mr,fp};
 }
 // Ban-Plan je nach Position
@@ -1021,16 +1021,16 @@ function banPlan(map){
     let s=p, why=[];
     const mf=mapFit(b,map).why.find(x=>x[0]==="+"); if(mf)why.push(mf[1]); else if(b.meta>=8.5)why.push("Top-Meta");
     const mr=map.st&&map.st[b.name], br=mr&&mr.n>=40?mr.br:(b.st?b.st.br:0);
-    if(br){ s+=br*5; if(br>=.15) why.unshift(`Banrate ${pct(br)} auf ${map.name}`) }
-    if(team==="B"&&inL(BLIND,b)){s+=.6;why.unshift("starker First Pick der Gegner")}
+    if(br){ s+=br*5; if(br>=.15) why.unshift(`Banrate ${pct(br)}`) }
+    if(team==="B"&&inL(BLIND,b)){s+=.6;why.unshift("starker First Pick")}
     if(pos===6&&inL(BLIND,b)){s+=.4}
     reserve.forEach(r=>{ if(counter(b,r)>=1.2){s+=1.3;why.unshift("kontert "+r.name)} });
-    if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){s+=2.3;why.unshift(`oft gepickt auf ${map.name}`)}
+    if(b.name==="Squeak"&&popRank(map,"Squeak")<=12){s+=2.3;why.unshift("oft gepickt")}
     // Bann von Lou/Bo öffnet die Gray-Emz-Kombi für euren Doppel-Pick (2+3 bzw. 4+5)
-    if(GE_STOP.includes(b.name)&&map.mode==="hz"&&!GE_OFF.includes(map.name)&&!u.has("gray")&&!u.has("emz")){s+=.8;why.push("Bann öffnet euch die Gray-Emz-Kombi")}
-    if(team==="A"&&pos!==1){ if(b.cls==="A"||b.cls==="R"||inL(LASTPICK,b)||(inL(ANTI_TANK,b)&&["ball","heist"].includes(map.mode))){s+=.9;why.unshift("gefährlicher Last Pick der Gegner")} }
+    if(GE_STOP.includes(b.name)&&map.mode==="hz"&&!GE_OFF.includes(map.name)&&!u.has("gray")&&!u.has("emz")){s+=.8;why.push("öffnet Gray + Emz")}
+    if(team==="A"&&pos!==1){ if(b.cls==="A"||b.cls==="R"||inL(LASTPICK,b)||(inL(ANTI_TANK,b)&&["ball","heist"].includes(map.mode))){s+=.9;why.unshift("gefährlicher Last Pick")} }
     if(pos===1&&(b.cls==="A"||inL(LASTPICK,b))){s+=.4}
-    if(team==="A"&&b.cls==="A"&&b.meta>=8&&map.walls>=1){s+=.8; if(!why.includes("gefährlicher Last Pick der Gegner"))why.unshift("gefährlicher Last Pick der Gegner (Wände)")}
+    if(team==="A"&&b.cls==="A"&&b.meta>=8&&map.walls>=1){s+=.8; if(!why.includes("gefährlicher Last Pick"))why.unshift("gefährlicher Last Pick")}
     return {n:b.name,s,why};
   }).sort((x,y)=>y.s-x.s);
   return {reserve,intro,cands};
@@ -1136,10 +1136,10 @@ function renderDraft(){
   // Siegchance relativ zum Durchschnitt der 30 besten Optionen
   const pool=all.slice(0,30).filter(x=>x.dp!=null), avgDp=pool.length?pool.reduce((t,x)=>t+x.dp,0)/pool.length:0;
   const list=all.slice(0,8);
-  const keepLast=team===mt?all.slice(0,20).find(x=>x.why.some(w=>w[1].startsWith("für euren Last Pick aufheben"))):null;
+  const keepLast=team===mt?all.slice(0,20).find(x=>x.why.some(w=>w[1].startsWith("für Last Pick aufheben"))):null;
   if(team===mt){ S.live=S.live||{}; S.live[cs]=all.slice(0,5).map(x=>[x.name,+x.s.toFixed(1)]) } // für den Verlauf: was der Coach angezeigt hat
   list.forEach(x=>{ if(x.dp==null) return; x.dpRel=x.dp-avgDp;
-    if(x.dpRel>=.01) x.why.push(["+",`${sgn1(x.dpRel)} Siegchance ggü. Durchschnitts-Pick`]); else if(x.dpRel<=-.01) x.why.push(["-",`${sgn1(x.dpRel)} Siegchance ggü. Durchschnitts-Pick`]); });
+    if(x.dpRel>=.01) x.why.push(["+",`Siegchance ${sgn1(x.dpRel)}`]); else if(x.dpRel<=-.01) x.why.push(["-",`Siegchance ${sgn1(x.dpRel)}`]); });
   const myPicks=S.picks.filter((p,i)=>p&&ORDER[i]===mt).map(get);
   const th=threats(myPicks,map), plan=slotPlan(cs,team);
   const lvl=v=>v<.35?["gut","ok"]:v<.8?["mittel","mid"]:["schwach","bad"];
@@ -1315,6 +1315,9 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+  "Kürzere Gründe bei den Vorschlägen (z. B. „offene Map“ statt „kann sich auf offener Map nicht verstecken“), damit du im Draft schneller lesen kannst.",
+  "Assassinen, die alle bisherigen Gegner laut Daten schlagen, bekommen auf offenen Maps nur noch den halben Abzug."]},
  {v:"202611242245", d:"24.11.2026", t:"Buffies je Account, Assassinen-Regel, Import-Fix", items:[
   "Account-Auswahl bei der Pick-Position: Für deinen eigenen Pick zieht die App Punkte ab, wenn dir auf diesem Account Buffies fehlen (z. B. Mandy und Chester auf dem dritten Account).",
   "Assassinen an Pick 4/5 vor dem Gegner-Last-Pick: nur halber Abzug, wenn sie laut Daten alle bisherigen Gegner schlagen (z. B. Melodie gegen Najia und Nani).",
