@@ -176,7 +176,7 @@ summary{cursor:pointer;font-weight:600}
 .h .hn{display:block;margin-top:8px}
 .h textarea{display:block;width:100%;margin-top:4px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:16px;resize:vertical}
 .h .hnote{order:5;flex-basis:100%;color:var(--muted);font-size:12.5px;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.win{color:var(--good)} .loss{color:var(--bad)}
+.win{color:var(--good)} .loss{color:var(--bad)} .midwr{color:var(--accent)}
 .btn.ghost{background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .hidden-step{opacity:.45;pointer-events:none}
@@ -446,7 +446,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611242326"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611242335"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -621,7 +621,7 @@ const SOFT_COUNTERS = {
  "Ziggy":["Lily","Kenji","Mina","Alli","Starr Nova","Kaze"], "Clancy":["Rico","Mr. P","Larry & Lawrie"], "Glowy":["Emz","8-Bit","Mr. P","Gale"],
  "Larry & Lawrie":["Mr. P","Mortis","Alli","Bolt","Starr Nova","Kaze","Kenji"], "Crow":["Poco"], "Byron":["Poco"],
  // Video Arthur Brawl Stars (17.11.), mit Daten bestätigt
- "Penny":["Berry"], "Amber":["Poco","Bo"], "Chester":["Mr. P"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"]};
+ "Penny":["Berry"], "Piper":["Nani"], "Bea":["Nani"], "Amber":["Poco","Bo"], "Chester":["Mr. P"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"]};
 const SIT_COUNTERS = {
  "Sam":["8-Bit","Emz"], "Lola":["Brock"], "Pam":["Willow","Penny"], "Jacky":["Lumi","Shelly"], "Ollie":["El Primo","Emz"],
  "Janet":["Sprout","Ziggy"], "Sandy":["El Primo","Bo"], "Ziggy":["El Primo","Buzz"], "Clancy":["Willow","8-Bit"], "Glowy":["Poco","Lou"],
@@ -1247,7 +1247,8 @@ function importResults(txt){
 }
 function renderHist(){
   const w=HIST.filter(h=>h.res==="w").length, l=HIST.filter(h=>h.res==="l").length;
-  $("hist-n").textContent=HIST.length?`(${HIST.length}${w+l?` · ${w} ${w===1?"Sieg":"Siege"}, ${l} ${l===1?"Niederlage":"Niederlagen"} · Winrate ${Math.round(w/(w+l)*100)} %`:""})`:"";
+  const wr=w+l?Math.round(w/(w+l)*100):0, wc=wr>55?"win":wr>=50?"midwr":"loss"; // Nutzer: grün über 55 %, gelb 50–55 %, rot unter 50 %
+  $("hist-n").innerHTML=HIST.length?`(${HIST.length}${w+l?` · ${w} ${w===1?"Sieg":"Siege"}, ${l} ${l===1?"Niederlage":"Niederlagen"} · <b class="${wc}">Winrate ${wr} %</b>`:""})`:"";
   if(!HIST.length){$("histlist").innerHTML=`<div class="sub">Noch kein Draft gespeichert. Sobald alle 6 Picks eingetragen sind, landet der Draft hier.</div>`;return}
   const open=new Set([...document.querySelectorAll("#histlist details[open]")].map(d=>d.dataset.hid));
   const dt=t=>new Date(t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
@@ -1318,6 +1319,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"202611242335", d:"24.11.2026", t:"Farbige Winrate, Nani-Konter", items:["Die Winrate bei „Letzte Drafts“ ist farbig: grün über 55 %, gelb 50–55 %, rot unter 50 %.","Nani kontert Piper und Bea leicht (eigene Erfahrung, weil dazu Daten fehlen)."]},
  {v:"202611242326", d:"24.11.2026", t:"Winrate im Verlauf", items:["Bei „Letzte Drafts“ steht neben Siegen und Niederlagen jetzt auch deine Winrate in Prozent."]},
  {v:"202611242323", d:"24.11.2026", t:"Account-Filter, kürzere Gründe", items:[
   "Kürzere Gründe bei den Vorschlägen (z. B. „offene Map“ statt „kann sich auf offener Map nicht verstecken“), damit du im Draft schneller lesen kannst.",

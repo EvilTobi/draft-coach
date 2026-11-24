@@ -98,7 +98,7 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Liste vom 22.11. (Sam, Lola, Pam, Jacky, Ollie, Janet, Sandy, Ziggy, Clancy, Glowy, Larry & Lawrie) mit Daten geprüft;
   unklare/widersprüchliche Einträge gestrichen → `NO_COUNTER` (zählen nie, auch nicht über Daten). Lola: keine Werfer-Konter
   (wird meist in Heist gespielt). Poco (Gadget Protective Tunes) weich gegen Ollie, Crow, Byron, Amber.
-  Video-Auswertung (Arthur 17.11., Drage 23.11.): weich Berry>Penny, Surge>Melodie/Shade/Kenji, Nori>Kaze/Colt.
+  Nutzer 24.11.: weich Nani>Piper, Nani>Bea (keine Matchup-Daten zu Piper). Video-Auswertung (Arthur 17.11., Drage 23.11.): weich Berry>Penny, Surge>Melodie/Shade/Kenji, Nori>Kaze/Colt.
   Creator-Aussagen immer gegen Daten prüfen; viele sind persönliche Vorlieben.
 - Squeak = Nutzer-Favorit: auf Maps mit Pick-Rang ≤ 12 (`popRank`) +3 als Pick, +2,3 als Bann; +1 als Last Pick oder wenn
   alle Assassinen-Konter weg sind. Edgar kontert Juju hart, außer auf Wasser-Maps (`WATER_MAPS`, `ONWATER`): Nutzer-Erfahrung
