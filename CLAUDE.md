@@ -137,6 +137,9 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   plus Kommentare im Chat. Claude ruft dann selbst `ranked_log.py --seit <ältester Draft>` ab, ordnet Ergebnisse/Bans/Werte den
   Drafts zu (Map + Brawler) und wertet aus. Keine RDC-Zeilen zurück in die App, außer der Nutzer fragt danach.
 
+- Geräte: Der Nutzer spielt auf dem iPad und nutzt die App parallel NUR auf dem MacBook (Verlassen des Spiels im Draft wird bestraft).
+  Verlauf/Notizen liegen also im MacBook-Browser; keine Geräte-Synchronisierung nötig. Layout auch für Desktop-Breite testen.
+
 ## Arbeitsweise
 - Antworten auf Deutsch, einsteigerfreundlich. Vor dem Live-Schalten kurz berichten, wenn der Nutzer das verlangt.
 - Größere Änderungen erst auf einem Branch, nach OK per Fast-Forward nach `main`. Commits als `EvilTobi <EvilTobi@users.noreply.github.com>`.
