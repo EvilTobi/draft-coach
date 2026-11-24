@@ -8,7 +8,7 @@ Nur Ranked (battle.type == "soloRanked"); Runden mit gleichen Teams werden zu ei
 import json, sys, urllib.request, urllib.parse, datetime
 from zoneinfo import ZoneInfo
 
-TAG = "#PU98PGYP"
+TAGS = ["#PU98PGYP", "#29V99QQ20"]  # dritter und zweiter Account des Nutzers
 BERLIN = ZoneInfo("Europe/Berlin")
 
 def fetch(tag):
@@ -22,14 +22,14 @@ def nice(n):
 
 def main():
     args = sys.argv[1:]
-    tag = next((a for a in args if a.startswith("#")), TAG)
+    tags = [a for a in args if a.startswith("#")] or TAGS
     since = None
     if "--seit" in args:
         s = args[args.index("--seit") + 1]
         now = datetime.datetime.now(BERLIN)
         since = datetime.datetime.strptime(f"{now.year} {s}", "%Y %d.%m. %H:%M").replace(tzinfo=BERLIN)
     rounds = []
-    for x in fetch(tag):
+    for tag, x in [(t, x) for t in tags for x in fetch(t)]:
         b = x["battle"]
         if b.get("type") != "soloRanked":
             continue
@@ -39,7 +39,7 @@ def main():
         mi = next(i for i, tm in enumerate(b["teams"]) if any(p["tag"] == tag for p in tm))
         my, en = b["teams"][mi], b["teams"][1 - mi]
         me = next(p for p in my if p["tag"] == tag)
-        rounds.append(dict(t=t, map=x["event"]["map"], mode=x["event"]["mode"], res=b.get("result"),
+        rounds.append(dict(acc=tag, t=t, map=x["event"]["map"], mode=x["event"]["mode"], res=b.get("result"),
             my=[nice(p["brawler"]["name"]) for p in my], en=[nice(p["brawler"]["name"]) for p in en],
             me=nice(me["brawler"]["name"]), st=me.get("stats", {}), star=(b.get("starPlayer") or {}).get("tag") == tag,
             bans_my=[nice(p["bannedBrawler"]["name"]) for p in my if p.get("bannedBrawler")],
@@ -47,7 +47,7 @@ def main():
     rounds.sort(key=lambda r: r["t"])
     matches = []
     for r in rounds:
-        key = (r["map"], tuple(sorted(r["my"])), tuple(sorted(r["en"])))
+        key = (r["acc"], r["map"], tuple(sorted(r["my"])), tuple(sorted(r["en"])))
         if matches and matches[-1]["key"] == key and (r["t"] - matches[-1]["r"][-1]["t"]).seconds < 900:
             matches[-1]["r"].append(r)
         else:
@@ -61,11 +61,12 @@ def main():
         w += res == "SIEG"; l += res == "NIEDERLAGE"
         k = sum(x["st"].get("kills", 0) for x in rs); d = sum(x["st"].get("deaths", 0) for x in rs)
         dmg = sum(x["st"].get("damageDealt", 0) for x in rs)
-        out.append(f"{f['t']:%d.%m. %H:%M} · {f['map']} · {res} {rw}:{rl} · du: {f['me']}"
+        out.append(f"{f['t']:%d.%m. %H:%M} · {f['map']} · {res} {rw}:{rl} · du: {f['me']}{' (' + f['acc'] + ')' if len(tags) > 1 else ''}"
                    f"{' · Star Player' if any(x['star'] for x in rs) else ''}\n"
                    f"   Team: {', '.join(f['my'])} | Gegner: {', '.join(f['en'])}\n"
                    f"   Bans eigenes Team: {', '.join(f['bans_my']) or '-'} | Bans Gegner: {', '.join(f['bans_en']) or '-'}\n"
                    f"   Deine Werte: {k} Kills, {d} Tode, {dmg:,} Schaden".replace(f"{dmg:,}", f"{dmg:,}".replace(",", ".")))
+    print(f"Accounts: {', '.join(tags)}")
     print(f"Ranked-Bilanz: {w} Siege, {l} Niederlagen ({len(rounds)} Runden in {len(matches)} Matches)\n")
     print("\n".join(out))
 

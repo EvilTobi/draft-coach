@@ -126,7 +126,7 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 ## Ranked-Tracking (Variante A, im Chat)
 - `scripts/ranked_log.py [#TAG] [--seit "24.11. 20:00"]`: Bilanz aus dem Kampfprotokoll (letzte 25 Runden, auch Trophäen-Spiele),
   über `bsproxy.royaleapi.dev` (Brawl-Stars-Proxy von RoyaleAPI; Key mit IP 45.79.218.79, als Netzwerk-Geheimnis der Umgebung
-  hinterlegt, Proxy setzt ihn ein). Nutzer-Tag #PU98PGYP (dritter Account). Ranked = `battle.type == "soloRanked"`
+  hinterlegt, Proxy setzt ihn ein). Nutzer-Tags #PU98PGYP (dritter Account) und #29V99QQ20 (zweiter Account), ohne Tag-Argument werden beide abgerufen. Ranked = `battle.type == "soloRanked"`
   (`ranked` = Trophäen). Jede Runde einzeln → Matches nach gleichen Teams gruppiert. Enthält Bans beider Teams (`bannedBrawler`),
   Kills/Tode/Schaden, Star Player. Nutzer sagt „ich spiele Ranked“ / „fertig“ → am Ende einmal abrufen.
 
