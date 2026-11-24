@@ -133,6 +133,9 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   Zeilen `RDC <ISO-Zeit mit Offset> | Map | Team | Gegner | W/L | Notiz`. App: „Letzte Drafts → Ergebnisse einfügen“
   (`importResults`): passender Draft über Map + ≥ 4 gleiche Brawler + ≤ 6 h Abstand; setzt Ergebnis, hängt Notiz an (keine Dopplung).
   Pick-Reihenfolge und Top-5-Vorschläge gibt es nur im App-Export, nicht im Kampfprotokoll.
+- Vereinfachter Ablauf (Nutzer 24.11., Standard): Nutzer schickt nach der Session NUR den App-Export („Neu seit letztem Export“)
+  plus Kommentare im Chat. Claude ruft dann selbst `ranked_log.py --seit <ältester Draft>` ab, ordnet Ergebnisse/Bans/Werte den
+  Drafts zu (Map + Brawler) und wertet aus. Keine RDC-Zeilen zurück in die App, außer der Nutzer fragt danach.
 
 ## Arbeitsweise
 - Antworten auf Deutsch, einsteigerfreundlich. Vor dem Live-Schalten kurz berichten, wenn der Nutzer das verlangt.
