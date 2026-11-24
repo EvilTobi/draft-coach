@@ -123,6 +123,13 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
 - Siegchance im Vorschlag relativ zum Durchschnitts-Pick; nach dem Draft Gewinnchance beider Teams + Spielplan
   (Lane/Mitte als Faustregel, Gegenüber/Fokus/Vorsicht mit Matchup-Winrates und Spielzahl).
 
+## Ranked-Tracking (Variante A, im Chat)
+- `scripts/ranked_log.py [#TAG] [--seit "24.11. 20:00"]`: Bilanz aus dem Kampfprotokoll (letzte 25 Runden, auch Trophäen-Spiele),
+  über `bsproxy.royaleapi.dev` (Brawl-Stars-Proxy von RoyaleAPI; Key mit IP 45.79.218.79, als Netzwerk-Geheimnis der Umgebung
+  hinterlegt, Proxy setzt ihn ein). Nutzer-Tag #PU98PGYP (dritter Account). Ranked = `battle.type == "soloRanked"`
+  (`ranked` = Trophäen). Jede Runde einzeln → Matches nach gleichen Teams gruppiert. Enthält Bans beider Teams (`bannedBrawler`),
+  Kills/Tode/Schaden, Star Player. Nutzer sagt „ich spiele Ranked“ / „fertig“ → am Ende einmal abrufen.
+
 ## Arbeitsweise
 - Antworten auf Deutsch, einsteigerfreundlich. Vor dem Live-Schalten kurz berichten, wenn der Nutzer das verlangt.
 - Größere Änderungen erst auf einem Branch, nach OK per Fast-Forward nach `main`. Commits als `EvilTobi <EvilTobi@users.noreply.github.com>`.
