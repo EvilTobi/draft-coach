@@ -17,6 +17,11 @@ Draft-Hilfe für Brawl Stars Ranked (Deutsch). Statische PWA, live unter https:/
   **Changelog** (`CHANGELOG` in `index.html`, aufklappbar unter dem Verlauf): bei jedem Live-Update oben einen Eintrag mit
   `v` = neue APP_VERSION (Literal, nicht die Variable), Datum, Titel und einfachen Sätzen ergänzen. `update_data.py` fügt
   bei Daten-Updates automatisch „Daten aktualisiert“ ein.
+- `data/buffies.js` – `window.BUFFIES` (Buffies 0–3 je Brawler für „Zweiter/Dritter Account“, ohne Playertags), erzeugt von
+  `scripts/update_buffies.py` (bei Bedarf bzw. beim Daten-Update mit ausführen). App: Account-Auswahl unter der Pick-Position
+  (`ACCT`, localStorage `rdc-acct`); eigener Pick −0,8 je fehlendem Buffy (nur Brawler in `avail`). Assassinen an Pick 4/5 vor
+  Gegner-Last-Pick: halber Abzug, wenn sie alle sichtbaren Gegner laut Daten schlagen (≥ +2 %, ≥ 150 Spiele). Import trägt Notiz nur
+  ein, wenn der Draft noch keine hat.
 - `manifest.webmanifest`, `icons/`, `maps/*.webp` (Map-Bilder aus dem Fandom-Wiki).
 
 ## Ranked-Kontext (Stand 19.11.2026, Season 51)

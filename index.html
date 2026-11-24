@@ -218,6 +218,7 @@ footer{font-size:12px;color:var(--muted)}
   <section id="s-pos">
     <h2><span class="step">2</span>Deine Pick-Position</h2>
     <div class="order" id="order"></div>
+    <div class="acts" id="acct" style="margin:8px 0 4px"></div>
     <div class="legend"><span><i class="dot" style="background:var(--blue)"></i>Team, das zuerst pickt (1 · 4 · 5)</span><span><i class="dot" style="background:var(--red)"></i>anderes Team (2 · 3 · 6)</span></div>
   </section>
 
@@ -259,6 +260,7 @@ footer{font-size:12px;color:var(--muted)}
 </div>
 
 <script src="data/stats.js"></script>
+<script src="data/buffies.js"></script>
 <script>
 // ---------- Daten ----------
 // Klasse: T Tank, A Assassine, D Damage Dealer, M Marksman, R Artillerie, C Controller, S Support
@@ -444,7 +446,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611242219"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611242245"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -773,6 +775,7 @@ function slotPlan(slot,team){ // was zählt an dieser Draft-Position
 }
 // Nutzer spielt Squeak gern: auf Maps, wo er oft gepickt wird (Top 12 der Pickrate), öfter vorschlagen und bannen
 const mapPr = (map,n) => !map.st ? 1 : (map.st[n]||{}).pr||0; // Pickrate auf der Map (Anteil der Spiele)
+const normN = n => String(n).toLowerCase().replace(/[^a-z0-9]/g,"");
 function popRank(map,n){ if(!map.st||!map.st[n]) return 99; const all=Object.entries(map.st).filter(([k,x])=>x.n>=50).sort((a,b)=>b[1].pr-a[1].pr); const i=all.findIndex(x=>x[0]===n); return i<0?99:i+1 }
 function score(name,map,mates,enemies,slot,team){
   ONWATER=WATER_MAPS.includes(map.name); WALLMAP=map.walls>=1;
@@ -838,7 +841,11 @@ function score(name,map,mates,enemies,slot,team){
   const shortR = b.range===1 || b.cls==="A";
   if(b.cls==="A"){
     if(slot<=2){s-=1.8;why.push(["-","Assassine erst spät picken"])}
-    else if(slot===3||(slot===4&&plan.later>0)){const ko=["ko","bounty"].includes(map.mode);s-=ko?1.5:.9;why.push(["-",ko?`Assassine vor dem Gegner-Last-Pick: in ${MODES[map.mode]} riskant`:"Assassine besser später"])}
+    else if(slot===3||(slot===4&&plan.later>0)){const ko=["ko","bounty"].includes(map.mode);
+      // Nutzer: Schlägt die Assassine alle sichtbaren Gegner laut Daten (je ≥ +2 %), zählt der Abzug nur halb
+      const beats=en.length>=2&&en.every(e=>{const m=matchup(b.name,e.name);return m.n>=150&&m.d>=.02});
+      s-=(ko?1.5:.9)*(beats?.5:1);
+      why.push(beats?["+",`schlägt alle bisherigen Gegner: ${ko?`in ${MODES[map.mode]} `:""}trotz Gegner-Last-Pick vertretbar`]:["-",ko?`Assassine vor dem Gegner-Last-Pick: in ${MODES[map.mode]} riskant`:"Assassine besser später"])}
     // Last Pick: Assassinen deutlich aufwerten, wenn noch keiner im Team ist (sonst kontert ein Tank/Damage Dealer beide)
     if(slot===5&&!noHide&&!tm.some(t=>t.cls==="A")){s+=1.5;why.unshift(["+","Last Pick: Assassine kann nicht mehr gekontert werden"])}
     if(diveSemi){s-=3;why.unshift(["-",`${enB.find(e=>e.tags.includes("w")).name} hat Wallbreak: Assassine nur mit Vorsicht`])}
@@ -955,6 +962,8 @@ function score(name,map,mates,enemies,slot,team){
     } else if((slot===1||slot===3)&&!stop.length&&!free.length&&!u.has(gePart.toLowerCase())){
       s+=1; why.unshift(["+",`Gray + Emz als Doppel-Pick: Lou und Bo sind weg`]) }
   }
+  // Eigener Pick: fehlende Buffies auf dem gewählten Account (Nutzer)
+  if(S.pos===slot+1){ const mb=buffyMiss(b.name); if(mb){ s-=.8*mb; why.unshift(["-",`dir fehlen ${mb} von 3 Buffies`]) } }
   // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
   if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
     // Nutzer: gegen Chuck plus Assassine (Melodie …) kann sich ein Verteidiger lohnen → kein Abzug
@@ -1042,7 +1051,15 @@ function renderMaps(){
   $("maps").innerHTML=list.map(m=>`<button class="map" data-map="${esc(m.name)}" aria-pressed="${S.map===m.name}">${m.img?`<img class="thumb" src="${m.img}" alt="" loading="lazy">`:""}<span class="txt"><span class="mode m-${m.mode}">${MODES[m.mode]}</span><span class="name">${esc(m.name)}</span><span class="traits">${tr(m)}${m.st?` · <span class="probadge">Daten</span>`:""}</span></span></button>`).join("")||`<div class="empty">Keine Maps in diesem Modus im Pool.</div>`;
   $("pool").innerHTML=allMaps().map(m=>`<label><input type="checkbox" data-pool="${esc(m.name)}" ${disabled.has(m.name)?"":"checked"}> <span class="m-${m.mode}" style="font-weight:700">${MODES[m.mode]}</span> ${esc(m.name)}${customMaps.some(c=>c.name===m.name)?` <button type="button" class="clear" data-delmap="${esc(m.name)}">entfernen</button>`:""}</label>`).join("");
 }
-function renderOrder(){
+// Account für die Buffies (Nutzer: auf dem dritten Account fehlen z. B. Mandy- und Chester-Buffies)
+let ACCT=store.get("acct",null);
+const BUF=window.BUFFIES||null;
+function renderAcct(){ const el=$("acct"); if(!el) return; if(!BUF){el.innerHTML="";return}
+  el.innerHTML=`<span class="sub" style="align-self:center">Account:</span>`+[["","ohne"]].concat(Object.entries(BUF.accounts).map(([k,a])=>[k,a.label])).map(([k,l])=>`<button class="chip" data-acct="${k}" aria-pressed="${(ACCT||"")===k}">${esc(l)}</button>`).join("") }
+// Fehlende Buffies für den eigenen Pick: −0,8 je fehlendem Buffy (nur Brawler, für die es Buffies gibt)
+function buffyMiss(name){ if(!BUF||!ACCT||!BUF.accounts[ACCT]) return 0; const k=normN(name);
+  if(!BUF.avail.includes(k)) return 0; const n=BUF.accounts[ACCT].b[k]; return n==null?0:3-n }
+function renderOrder(){ renderAcct();
   $("order").innerHTML=ORDER.map((t,i)=>`<button class="slotbtn t${t}" data-pos="${i+1}" aria-pressed="${S.pos===i+1}"><span class="n">${i+1}</span><small>${i===0?"First Pick":i===5?"Last Pick":"Pick "+(i+1)}</small></button>`).join("");
 }
 function renderBans(){
@@ -1205,7 +1222,6 @@ function exportHist(which){
   return out.join("\n");
 }
 // Ergebnisse aus dem Kampfprotokoll (Chat) übernehmen: „RDC Zeit | Map | Team | Gegner | W/L | Notiz“
-const normN = n => String(n).toLowerCase().replace(/[^a-z0-9]/g,"");
 function importResults(txt){
   const lines=txt.split(/\n/).map(l=>l.trim()).filter(l=>/^RDC\s/i.test(l)), done=[], miss=[];
   for(const l of lines){
@@ -1220,7 +1236,7 @@ function importResults(txt){
     }
     if(!best){miss.push(`${mapN} (${(t0||"").slice(11,16)})`);continue}
     const h=best.h; if(r==="W"||r==="L") h.res=r.toLowerCase();
-    if(note&&!(h.note||"").includes(note)) h.note=h.note?h.note+" · "+note:note;
+    if(note&&!(h.note||"").trim()) h.note=note; // Nutzer: vorhandene Notiz aus der App nicht ergänzen
     done.push(`${h.map} ${new Date(h.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`);
   }
   store.set("hist",HIST); renderHist();
@@ -1259,6 +1275,7 @@ document.addEventListener("click",e=>{
   if(d.mode){S.mode=d.mode;renderMaps();return}
   if(d.map){S.map=d.map;render();return}
   if(d.pos){S.pos=+d.pos;render();return}
+  if(d.acct!=null){ACCT=d.acct||null;store.set("acct",ACCT);render();return}
   if(d.ban){const i=S.bans.findIndex(x=>x.toLowerCase()===d.ban.toLowerCase());i>=0?S.bans.splice(i,1):S.bans.length<6&&S.bans.push(d.ban);render();return}
   if(d.choose){ if(d.choose==="ban"){if(S.bans.length<6)S.bans.push(d.name)} else {const cs=curSlot();if(cs>=0)S.picks[cs]=d.name} render(); const n=$("pk-"+d.choose); n&&n.focus(); return}
   if(d.take){const cs=curSlot();if(cs>=0)S.picks[cs]=d.take;render();return}
@@ -1298,6 +1315,10 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"202611242245", d:"24.11.2026", t:"Buffies je Account, Assassinen-Regel, Import-Fix", items:[
+  "Account-Auswahl bei der Pick-Position: Für deinen eigenen Pick zieht die App Punkte ab, wenn dir auf diesem Account Buffies fehlen (z. B. Mandy und Chester auf dem dritten Account).",
+  "Assassinen an Pick 4/5 vor dem Gegner-Last-Pick: nur halber Abzug, wenn sie laut Daten alle bisherigen Gegner schlagen (z. B. Melodie gegen Najia und Nani).",
+  "Ergebnisse einfügen: Eine Notiz wird nur noch eingetragen, wenn der Draft noch keine hat."]},
  {v:"202611242219", d:"24.11.2026", t:"Ergebnisse einfügen", items:[
   "Neu unter „Letzte Drafts“: Ergebnisse einfügen. Die Zeilen aus dem Chat (Kampfprotokoll) tragen Sieg/Niederlage und Notiz automatisch beim passenden Draft ein."]},
  {v:"202611232348", d:"23.11.2026", t:"Gray + Emz in Hot Zone", items:[
