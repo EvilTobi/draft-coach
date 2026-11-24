@@ -129,6 +129,10 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   hinterlegt, Proxy setzt ihn ein). Nutzer-Tags #PU98PGYP (dritter Account) und #29V99QQ20 (zweiter Account), ohne Tag-Argument werden beide abgerufen. Ranked = `battle.type == "soloRanked"`
   (`ranked` = Trophäen). Jede Runde einzeln → Matches nach gleichen Teams gruppiert. Enthält Bans beider Teams (`bannedBrawler`),
   Kills/Tode/Schaden, Star Player. Nutzer sagt „ich spiele Ranked“ / „fertig“ → am Ende einmal abrufen.
+- Nach „fertig“: nummerierte Liste ausgeben, Nutzer kommentiert im Chat („1: …“). Dann `--import --notiz "1=Text"` (mehrfach) →
+  Zeilen `RDC <ISO-Zeit mit Offset> | Map | Team | Gegner | W/L | Notiz`. App: „Letzte Drafts → Ergebnisse einfügen“
+  (`importResults`): passender Draft über Map + ≥ 4 gleiche Brawler + ≤ 6 h Abstand; setzt Ergebnis, hängt Notiz an (keine Dopplung).
+  Pick-Reihenfolge und Top-5-Vorschläge gibt es nur im App-Export, nicht im Kampfprotokoll.
 
 ## Arbeitsweise
 - Antworten auf Deutsch, einsteigerfreundlich. Vor dem Live-Schalten kurz berichten, wenn der Nutzer das verlangt.

@@ -240,6 +240,12 @@ footer{font-size:12px;color:var(--muted)}
     <details id="hist"><summary>Letzte Drafts <span class="sub" id="hist-n"></span></summary>
       <div class="sub" style="margin:6px 0 8px">Jeder fertige Draft wird hier automatisch gespeichert (nur auf diesem Gerät, die letzten 30).</div>
       <div class="acts" id="hist-exp" style="margin-bottom:8px"><button class="btn" data-hexp="new">Neu seit letztem Export</button><button class="btn ghost" data-hexp="today">Heute kopieren</button><button class="btn ghost" data-hexp="all">Alle kopieren</button></div>
+      <details id="hist-imp" style="margin-bottom:8px"><summary class="sub">Ergebnisse einfügen (aus dem Chat)</summary>
+        <div class="sub" style="margin:6px 0">Die Zeilen, die mit „RDC“ beginnen, hier einfügen. Sieg/Niederlage und Notiz werden den passenden Drafts zugeordnet (Map, Brawler, Uhrzeit).</div>
+        <textarea id="imp-in" rows="4" placeholder="RDC 2026-11-24T20:35 | Dueling Beetles | Stu,Chester,Bibi | Colette,Emz,Mina | W | Notiz" style="width:100%;font-size:12px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px"></textarea>
+        <div class="acts" style="margin-top:6px"><button class="btn" data-himp="1">Übernehmen</button></div>
+        <div class="sub" id="imp-out"></div>
+      </details>
       <textarea id="hist-out" rows="6" readonly hidden style="width:100%;font-size:12px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px"></textarea>
       <div id="histlist"></div>
     </details>
@@ -1198,6 +1204,28 @@ function exportHist(which){
   Object.assign(S,keep);
   return out.join("\n");
 }
+// Ergebnisse aus dem Kampfprotokoll (Chat) übernehmen: „RDC Zeit | Map | Team | Gegner | W/L | Notiz“
+const normN = n => String(n).toLowerCase().replace(/[^a-z0-9]/g,"");
+function importResults(txt){
+  const lines=txt.split(/\n/).map(l=>l.trim()).filter(l=>/^RDC\s/i.test(l)), done=[], miss=[];
+  for(const l of lines){
+    const [t0,mapN,myS,enS,r,...nt]=l.replace(/^RDC\s+/i,"").split("|").map(x=>x.trim()), note=nt.join(" | ").trim();
+    const t=Date.parse(t0), my=(myS||"").split(",").map(normN), en=(enS||"").split(",").map(normN);
+    let best=null;
+    for(const h of HIST){
+      if(normN(h.map)!==normN(mapN)) continue;
+      const mt=ORDER[h.pos-1], hm=h.picks.filter((_,i)=>ORDER[i]===mt).map(normN), he=h.picks.filter((_,i)=>ORDER[i]!==mt).map(normN);
+      const ov=hm.filter(x=>my.includes(x)).length+he.filter(x=>en.includes(x)).length, dt=isNaN(t)?0:Math.abs(t-h.t);
+      if(ov>=4&&dt<6*3600e3&&(!best||ov>best.ov||(ov===best.ov&&dt<best.dt))) best={h,ov,dt};
+    }
+    if(!best){miss.push(`${mapN} (${(t0||"").slice(11,16)})`);continue}
+    const h=best.h; if(r==="W"||r==="L") h.res=r.toLowerCase();
+    if(note&&!(h.note||"").includes(note)) h.note=h.note?h.note+" · "+note:note;
+    done.push(`${h.map} ${new Date(h.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`);
+  }
+  store.set("hist",HIST); renderHist();
+  return {done,miss,n:lines.length};
+}
 function renderHist(){
   const w=HIST.filter(h=>h.res==="w").length, l=HIST.filter(h=>h.res==="l").length;
   $("hist-n").textContent=HIST.length?`(${HIST.length}${w+l?` · ${w} ${w===1?"Sieg":"Siege"}, ${l} ${l===1?"Niederlage":"Niederlagen"}`:""})`:"";
@@ -1240,6 +1268,9 @@ document.addEventListener("click",e=>{
   if(t.id==="reset"){S.bans=[];S.picks=[null,null,null,null,null,null];S.did=newId();S.live=null;S.liveBans=null;render();return}
   if(d.hexp){const txt=exportHist(d.hexp), o=$("hist-out"); if(!txt){toast("Nichts Neues seit dem letzten Export");return} o.value=txt; o.hidden=false;
     (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Kopiert: jetzt im Chat einfügen")).catch(()=>{o.focus();o.select();toast("Text markiert: bitte kopieren")}); return}
+  if(d.himp){const r=importResults($("imp-in").value);
+    $("imp-out").textContent=!r.n?"Keine Zeile mit „RDC“ gefunden.":`${r.done.length} von ${r.n} übernommen${r.done.length?": "+r.done.join(", "):""}.${r.miss.length?" Kein passender Draft für: "+r.miss.join(", ")+".":""}`;
+    if(r.done.length){$("imp-in").value="";toast(`${r.done.length} Ergebnis${r.done.length>1?"se":""} übernommen`)} return}
   if(d.hres){const h=HIST.find(x=>x.id===d.hres); if(h){h.res=h.res===d.r?null:d.r; store.set("hist",HIST); renderHist()} return}
   if(d.hdel){HIST=HIST.filter(x=>x.id!==d.hdel); store.set("hist",HIST); if(S.did===d.hdel)S.did=newId(); renderHist(); return}
   if(d.hopen){const h=HIST.find(x=>x.id===d.hopen); if(h&&allMaps().some(m=>m.name===h.map)){Object.assign(S,{map:h.map,pos:h.pos,bans:[...h.bans],picks:[...h.picks],did:h.id}); render(); $("s-draft").scrollIntoView({behavior:"smooth"})} else toast("Map nicht mehr im Pool"); return}
@@ -1267,6 +1298,8 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
+  "Neu unter „Letzte Drafts“: Ergebnisse einfügen. Die Zeilen aus dem Chat (Kampfprotokoll) tragen Sieg/Niederlage und Notiz automatisch beim passenden Draft ein."]},
  {v:"202611232348", d:"23.11.2026", t:"Gray + Emz in Hot Zone", items:[
   "Gray + Emz in Hot Zone (außer Parallel Plays): starke Kombi, wenn Lou und Bo gebannt oder im eigenen Team sind. Hat der Gegner Lou oder Bo, gibt es einen Abzug. Als Doppel-Pick (2+3 oder 4+5) wird der erste Partner schon leicht aufgewertet, und Lou/Bo steigen in den Bann-Vorschlägen."]},
  {v:"202611232331", d:"23.11.2026", t:"Auswertung: Anti-Assassinen-Hinweis, Vision-Gear, Ring of Fire", items:[

@@ -23,6 +23,11 @@ def nice(n):
 def main():
     args = sys.argv[1:]
     tags = [a for a in args if a.startswith("#")] or TAGS
+    # --notiz "2=Text" (mehrfach): Notiz für Match Nr. 2 in die Import-Zeilen übernehmen
+    notes = {}
+    for i, a in enumerate(args):
+        if a == "--notiz" and i + 1 < len(args) and "=" in args[i + 1]:
+            n, txt = args[i + 1].split("=", 1); notes[int(n)] = txt.replace("|", "/").replace("\n", " ").strip()
     since = None
     if "--seit" in args:
         s = args[args.index("--seit") + 1]
@@ -53,15 +58,17 @@ def main():
         else:
             matches.append({"key": key, "r": [r]})
     w = l = 0
-    out = []
-    for m in matches:
+    out = []; imp = []
+    for no, m in enumerate(matches, 1):
         rs = m["r"]; f = rs[0]
         rw = sum(x["res"] == "victory" for x in rs); rl = sum(x["res"] == "defeat" for x in rs)
         res = "SIEG" if rw > rl else "NIEDERLAGE" if rl > rw else "offen"
         w += res == "SIEG"; l += res == "NIEDERLAGE"
         k = sum(x["st"].get("kills", 0) for x in rs); d = sum(x["st"].get("deaths", 0) for x in rs)
         dmg = sum(x["st"].get("damageDealt", 0) for x in rs)
-        out.append(f"{f['t']:%d.%m. %H:%M} · {f['map']} · {res} {rw}:{rl} · du: {f['me']}{' (' + f['acc'] + ')' if len(tags) > 1 else ''}"
+        imp.append(f"RDC {f['t'].isoformat(timespec='minutes')} | {f['map']} | {','.join(f['my'])} | {','.join(f['en'])} | "
+                   f"{'W' if res == 'SIEG' else 'L' if res == 'NIEDERLAGE' else '-'} | {notes.get(no, '')}".rstrip(" |"))
+        out.append(f"{no}) {f['t']:%d.%m. %H:%M} · {f['map']} · {res} {rw}:{rl} · du: {f['me']}{' (' + f['acc'] + ')' if len(tags) > 1 else ''}"
                    f"{' · Star Player' if any(x['star'] for x in rs) else ''}\n"
                    f"   Team: {', '.join(f['my'])} | Gegner: {', '.join(f['en'])}\n"
                    f"   Bans eigenes Team: {', '.join(f['bans_my']) or '-'} | Bans Gegner: {', '.join(f['bans_en']) or '-'}\n"
@@ -69,6 +76,9 @@ def main():
     print(f"Accounts: {', '.join(tags)}")
     print(f"Ranked-Bilanz: {w} Siege, {l} Niederlagen ({len(rounds)} Runden in {len(matches)} Matches)\n")
     print("\n".join(out))
+    if "--import" in args:
+        print("\n--- Für die App (Letzte Drafts → Ergebnisse einfügen) ---")
+        print("\n".join(imp))
 
 if __name__ == "__main__":
     main()
