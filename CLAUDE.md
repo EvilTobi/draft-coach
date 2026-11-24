@@ -22,6 +22,10 @@ Draft-Hilfe für Brawl Stars Ranked (Deutsch). Statische PWA, live unter https:/
   (`ACCT`, localStorage `rdc-acct`); eigener Pick −0,8 je fehlendem Buffy (nur Brawler in `avail`). Assassinen an Pick 4/5 vor
   Gegner-Last-Pick: halber Abzug, wenn sie alle sichtbaren Gegner laut Daten schlagen (≥ +2 %, ≥ 150 Spiele). Import trägt Notiz nur
   ein, wenn der Draft noch keine hat.
+  Accounts heißen wie im Spiel (Dreamy = zweiter, kiora = dritter), Knöpfe oben im Header; weitere Tags in `ACCOUNTS` ergänzen.
+  `nr` = nicht bereit (Power < 11, vorhandene Hypercharge fehlt, nicht freigeschaltet) → eigener Pick −25 (Trial-Brawler ausgenommen).
+  „Konter frei“ (`freeCounters`) zählt nur Konter mit ≥ 1,5 % Pickrate auf der Map (Nutzer: Jacky in Bounty/Knockout nie).
+  Gründe-Texte kurz halten (≤ 3 Wörter + Namen), Nutzer liest im Draft schnell.
 - `manifest.webmanifest`, `icons/`, `maps/*.webp` (Map-Bilder aus dem Fandom-Wiki).
 
 ## Ranked-Kontext (Stand 19.11.2026, Season 51)

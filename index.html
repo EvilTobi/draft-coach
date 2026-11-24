@@ -192,6 +192,7 @@ footer{font-size:12px;color:var(--muted)}
       <h1>Ranked <span>Draft</span> Coach</h1>
       <div class="sub">Map wählen · Position wählen · bannen · picken</div>
       <div class="share" style="margin-top:10px"><button class="btn" id="share" type="button" style="white-space:nowrap">App teilen</button><span class="sub" id="install-hint"></span></div>
+      <div class="acts" id="acct" style="margin-top:10px"></div>
     </div>
     <div class="note"><b>Ranked Season 51 · seit 19.11.2026.</b> Map-Pool und Trial-Brawler (Frank, Mico, Spike, Bonnie, Max, Amber) laut Brawl Stars Fandom-Wiki. Statistiken: <b>Pro 40 % · Masters III 35 % · Masters I+II 25 %</b> aus DraftMeta, Brawl Atlas, Corestats, BrawlLab und BrawlPick. <span id="data-stand"></span> <span id="app-ver"></span></div>
   </header>
@@ -218,7 +219,6 @@ footer{font-size:12px;color:var(--muted)}
   <section id="s-pos">
     <h2><span class="step">2</span>Deine Pick-Position</h2>
     <div class="order" id="order"></div>
-    <div class="acts" id="acct" style="margin:8px 0 4px"></div>
     <div class="legend"><span><i class="dot" style="background:var(--blue)"></i>Team, das zuerst pickt (1 · 4 · 5)</span><span><i class="dot" style="background:var(--red)"></i>anderes Team (2 · 3 · 6)</span></div>
   </section>
 
@@ -738,8 +738,8 @@ function hardC(e,b){ const k=e+"|"+b+(ONWATER?"|w":"")+(WALLMAP?"|m":""); if(k i
   if(v&&v[1]>=150) c+=cl(v[0]*10); else if(w&&w[1]>=150) c-=cl(w[0]*10); else c+=cl(modelPair(e,b)*10);
   return HC[k]=c }
 // Wie viele harte Konter von b sind noch frei? Gewicht nach aktueller Stärke (Meta) des Konters
-function freeCounters(b,u){ const out=[];
-  for(const n of NAMES){ if(n===b) continue; const c=hardC(n,b); if(c<.8) continue;
+function freeCounters(b,u,map){ const out=[];
+  for(const n of NAMES){ if(n===b) continue; if(map&&map.st&&mapPr(map,n)<.015) continue; const c=hardC(n,b); if(c<.8) continue;
     const wt=Math.max(.3,Math.min(1.5,(get(n).meta-3)/4)); out.push({n,c,wt,free:!u.has(n.toLowerCase()),v:Math.min(2.5,c)*wt}) }
   return out.sort((x,y)=>y.v-x.v) }
 // Wie verwundbar ist ein Team? Werte 0 (abgesichert) bis ~1.5 (sehr anfällig). Skaliert auf Teamgröße.
@@ -963,7 +963,8 @@ function score(name,map,mates,enemies,slot,team){
       s+=1; why.unshift(["+","Gray + Emz möglich"]) }
   }
   // Eigener Pick: fehlende Buffies auf dem gewählten Account (Nutzer)
-  if(S.pos===slot+1){ const mb=buffyMiss(b.name); if(mb){ s-=.8*mb; why.unshift(["-",`${mb} Buffies fehlen`]) } }
+  if(S.pos===slot+1){ if(notReady(b.name)){ s-=25; why.unshift(["-","nicht Power 11 / ohne Hypercharge"]) }
+    else { const mb=buffyMiss(b.name); if(mb){ s-=.8*mb; why.unshift(["-",`${mb} Buffies fehlen`]) } } }
   // Heist gegen Chuck: nicht verteidigen, sondern Schaden machen
   if(map.mode==="heist"&&enB.some(e=>e.name==="Chuck")){
     // Nutzer: gegen Chuck plus Assassine (Melodie …) kann sich ein Verteidiger lohnen → kein Abzug
@@ -978,7 +979,7 @@ function score(name,map,mates,enemies,slot,team){
   // gewichtet nach Stärke des Konters. Sind alle harten Konter gebannt/gepickt, gibt es einen Bonus. First Pick nur 35 %
   // (dort steckt das Risiko schon im First-Pick-Wert).
   if(plan.later>0){
-    const fc=freeCounters(b.name,used()), fr=fc.filter(x=>x.free), w=slot===0?.35:1;
+    const fc=freeCounters(b.name,used(),map), fr=fc.filter(x=>x.free), w=slot===0?.35:1;
     if(fr.length){ // Die Gegner brauchen nur einen Konter: der beste freie zählt voll, weitere nur wenig
       const pen=Math.min(7,1.5*fr[0].v+.35*fr.slice(1,4).reduce((a,x)=>a+x.v,0))*w; s-=pen;
       if(pen>=.5) why.push(["-",`Konter frei: ${fr.slice(0,3).map(x=>x.n).join(", ")}${fr.length>3?" …":""}`]) }
@@ -1055,8 +1056,10 @@ function renderMaps(){
 let ACCT=store.get("acct",null);
 const BUF=window.BUFFIES||null;
 function renderAcct(){ const el=$("acct"); if(!el) return; if(!BUF){el.innerHTML="";return}
-  el.innerHTML=`<span class="sub" style="align-self:center">Account:</span>`+[["","ohne"]].concat(Object.entries(BUF.accounts).map(([k,a])=>[k,a.label])).map(([k,l])=>`<button class="chip" data-acct="${k}" aria-pressed="${(ACCT||"")===k}">${esc(l)}</button>`).join("") }
+  el.innerHTML=`<span class="sub" style="align-self:center">Dein Account:</span>`+[["","ohne"]].concat(Object.entries(BUF.accounts).map(([k,a])=>[k,a.label])).map(([k,l])=>`<button class="chip" data-acct="${k}" aria-pressed="${(ACCT||"")===k}">${esc(l)}</button>`).join("") }
 // Fehlende Buffies für den eigenen Pick: −0,8 je fehlendem Buffy (nur Brawler, für die es Buffies gibt)
+// Nicht bereit für Ranked (Power < 11, Hypercharge fehlt, nicht freigeschaltet); Trial-Brawler hat jeder
+function notReady(name){ return !!(BUF&&ACCT&&BUF.accounts[ACCT]&&(BUF.accounts[ACCT].nr||[]).includes(normN(name))&&!TRIAL.includes(name)) }
 function buffyMiss(name){ if(!BUF||!ACCT||!BUF.accounts[ACCT]) return 0; const k=normN(name);
   if(!BUF.avail.includes(k)) return 0; const n=BUF.accounts[ACCT].b[k]; return n==null?0:3-n }
 function renderOrder(){ renderAcct();
@@ -1317,7 +1320,9 @@ const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}
 const CHANGELOG = [
  {v:"NAECHSTE", d:"offen", t:"Nächste Version (in Arbeit)", items:[
   "Kürzere Gründe bei den Vorschlägen (z. B. „offene Map“ statt „kann sich auf offener Map nicht verstecken“), damit du im Draft schneller lesen kannst.",
-  "Assassinen, die alle bisherigen Gegner laut Daten schlagen, bekommen auf offenen Maps nur noch den halben Abzug."]},
+  "Assassinen, die alle bisherigen Gegner laut Daten schlagen, bekommen auf offenen Maps nur noch den halben Abzug.",
+  "Account-Auswahl jetzt oben (Dreamy, kiora): Für deinen eigenen Pick kommen nur Brawler mit Power 11 und Hypercharge infrage.",
+  "„Konter frei“ zählt nur Brawler, die auf der Map auch gespielt werden (z. B. kein Jacky in Bounty und Knockout)."]},
  {v:"202611242245", d:"24.11.2026", t:"Buffies je Account, Assassinen-Regel, Import-Fix", items:[
   "Account-Auswahl bei der Pick-Position: Für deinen eigenen Pick zieht die App Punkte ab, wenn dir auf diesem Account Buffies fehlen (z. B. Mandy und Chester auf dem dritten Account).",
   "Assassinen an Pick 4/5 vor dem Gegner-Last-Pick: nur halber Abzug, wenn sie laut Daten alle bisherigen Gegner schlagen (z. B. Melodie gegen Najia und Nani).",
