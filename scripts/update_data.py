@@ -110,6 +110,16 @@ for mp in RANKED_MAPS:
         DM["maps"][mp][g] = dm_bans(rank, mp)
 sources["draftmeta"] = {"from": d_from, "to": d_to,
     "drafts": {g: (DM["all"][g] or {}).get("drafts", 0) for g in DM_RANKS}}
+# Legendary (I–III nur zusammen abrufbar): nicht in der Gewichtung, nur für den Rang-Schalter der App
+# (Pick- und Winrate je Map: was Gegner in Legendary wirklich picken, was dort trotzdem gewinnt)
+log("DraftMeta: Legendary …")
+def leg_rows(d):
+    return {n: [r4(r["pr"]), r4(r["wr"]), r["n"]] for n, r in (d or {"rows": {}})["rows"].items()
+            if n in NAMES and r["pr"] is not None and r["wr"] is not None}
+_leg_all = dm_bans("legendary")
+LEG = {"drafts": (_leg_all or {}).get("drafts", 0), "all": leg_rows(_leg_all),
+       "maps": {mp: leg_rows(dm_bans("legendary", mp)) for mp in RANKED_MAPS}}
+sources["draftmeta"]["drafts"]["leg"] = LEG["drafts"]
 
 # Hinweis: DraftMeta bietet auch eine Draft-Opening-Analyse, die ist aber rang-unabhängig
 # ("rank-blind") und passt nicht zu Masters/Pro. Den First-Pick-Wert berechnet die App deshalb
@@ -331,7 +341,7 @@ SYN = merge_pairs([(WEIGHTS["pro"], cs_syn), (0.3, lab_syn)])
 stats = {
     "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     "weights": WEIGHTS, "sources": sources,
-    "brawlers": brawlers, "maps": maps, "model": MODEL,
+    "brawlers": brawlers, "maps": maps, "model": MODEL, "leg": LEG,
     "vs": {f"{a}|{b}": v for (a, b), v in VS.items()},
     "syn": {f"{a}|{b}": v for (a, b), v in SYN.items()},
 }
