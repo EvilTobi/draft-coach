@@ -447,7 +447,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611242335"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611251102"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -1333,6 +1333,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"202611251102", d:"25.11.2026", t:"Rang-Schalter Legendary, neue Daten", items:["Oben gibt es den Schalter „Dein Rang: Legendary · Masters+“. Standard ist Legendary.","Bei Legendary zählt die Map-Winrate aus Legendary mit (ein Drittel).","Brawler, die in Masters+ selten sind, in Legendary aber oft gepickt werden und gewinnen (z. B. Bo auf Gem Fort, Bibi auf Sneaky Fields), bekommen nur noch den halben Abzug.","Bei Gegnern zählt, was in Legendary wirklich gepickt wird (z. B. Spike, Mico, Brock). Das betrifft vor allem die Konter-Gefahr.","Statistiken neu geladen: 5,3 Mio. Spiele aus Brawl Atlas, DraftMeta bis 25.11."]},
  {v:"202611242335", d:"24.11.2026", t:"Farbige Winrate, Nani-Konter", items:["Die Winrate bei „Letzte Drafts“ ist farbig: grün über 55 %, gelb 50–55 %, rot unter 50 %.","Nani kontert Piper und Bea leicht (eigene Erfahrung, weil dazu Daten fehlen)."]},
  {v:"202611242326", d:"24.11.2026", t:"Winrate im Verlauf", items:["Bei „Letzte Drafts“ steht neben Siegen und Niederlagen jetzt auch deine Winrate in Prozent."]},
  {v:"202611242323", d:"24.11.2026", t:"Account-Filter, kürzere Gründe", items:[
