@@ -447,7 +447,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611251102"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611251332"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -662,7 +662,9 @@ const FRANK_HARD = ["Colette","Lou","Gale","Otis","Pierce","R-T","Shelly","Emz",
 const TANK_HARD = ["Colette","Griff","Pierce","Otis","Shelly","R-T","Sirius"];
 // Map-Besonderheiten (Nutzer): Juju wird durch Wasser stärker, auf Parallel Plays auch als First Pick
 const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser-Map"]},
-  "Ring of Fire":{"Cosmo":[6,"Zonen-Kontrolle"]}};
+  "Ring of Fire":{"Cosmo":[6,"Zonen-Kontrolle"]},
+  // Nutzer 25.11.: Brock gehört auf Hideout in die Top 5 der First Picks (Masters+ 61 % Pickrate, Legendary 51 % Winrate)
+  "Hideout":{"Brock":[4.5,"Standard-Pick hier"]}};
 // Brawler mit vielen Projektilen: laden Gigis Super schnell auf (Nutzer-Erfahrung)
 const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit"]; // nicht Bull/Darryl: gegen die verliert Gigi im Nahkampf
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
@@ -696,8 +698,10 @@ function mapFit(b,map,enemy){ // enemy: Bewertung als Gegner-Pick (Banns, Gegner
   if(i>=0){s+=3-i*.25; why.unshift(["+","Top-Pick #"+(i+1)])}
   const mb=(MAP_BONUS[map.name]||{})[b.name]; if(mb){s+=mb[0]; why.unshift(["+",mb[1]])}
   const r0=map.st&&map.st[b.name], l=legS(map,b.name);
-  // Rang Legendary: Map-Winrate aus Legendary zählt ein Drittel (ab 300 Spielen)
-  const r=r0&&l&&l[2]>=300?{...r0,wr:(2*r0.wr+l[1])/3}:r0;
+  // Rang Legendary: Map-Winrate 50/50 aus Masters+ und Legendary (ab 300 Legendary-Spielen);
+  // bei kleiner Masters+-Stichprobe (< 300 Spiele) zählt Legendary mehr (Bull Kaboom Canyon: 88 Spiele mit 80 %)
+  const wl=r0&&l&&l[2]>=300?.5+.5*Math.max(0,1-r0.n/300):0;
+  const r=wl?{...r0,wr:(1-wl)*r0.wr+wl*l[1]}:r0;
   if(r&&r.n>=40){ const d=r.wr-.5; s+=d*(map.mode==="ko"&&r.n>=500?18:10)+Math.min(1.2,Math.sqrt((r.pr||0)+(r.br||0))*1.5);
     if(d>=.03)why.push(["+",`Map-Winrate ${pct1(r.wr)}`]); if(d<=-.03)why.push(["-",`Map-Winrate nur ${pct1(r.wr)}`]); }
   // Nutzer: Brawler, die auf der Map kaum jemand spielt (Chuck auf Triple Dribble, R-T in Brawl Ball), nicht vorschlagen
@@ -960,6 +964,10 @@ function score(name,map,mates,enemies,slot,team){
   // Nutzer: Shelly in Heist nur gegen drei Tanks/Nahkämpfer; Abzug umso größer, je seltener sie auf der Map gespielt wird
   if(b.name==="Shelly"&&map.mode==="heist"&&enB.filter(e=>e.cls==="T"||e.range===1).length<3){
     s-=4+6*(1-Math.min(1,mapPr(map,"Shelly")/.05)); why.unshift(["-","schwach in Heist"]) }
+  // Nutzer 25.11.: Bull auf Kaboom Canyon abwerten, nie als First Pick (Masters+-Winrate nur aus 88 Spielen)
+  if(b.name==="Bull"&&map.name==="Kaboom Canyon"){ s-=slot===0?10:2.5; why.unshift(["-",slot===0?"nie First Pick hier":"schwach hier"]) }
+  // Nutzer 25.11.: Melodie ab Pick 4 stärker (reagiert auf Gegner), an Pick 1–3 etwas tiefer
+  if(b.name==="Melodie"){ if(slot>=3){ s+=2; const k=why.findIndex(w=>w[1]==="Assassine zu früh"); if(k>=0) why.splice(k,1); why.push(["+","stark ab Pick 4"]) } else { s-=2; if(!why.some(w=>w[1]==="Assassine zu früh")) why.push(["-","besser ab Pick 4"]) } }
   // Gray + Emz in Hot Zone (Nutzer; Daten +3,2 %): Gray-Portal bringt das Team sofort in die Zone, Emz hält sie.
   // Nur Lou (Super friert ein) und Bo (Minen aufs Portal) stoppen die Kombi. Nicht auf Parallel Plays (Gray kaum gespielt).
   const gePart={"Gray":"Emz","Emz":"Gray"}[b.name];
@@ -1333,7 +1341,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
- {v:"202611251102", d:"25.11.2026", t:"Rang-Schalter Legendary, neue Daten", items:["Oben gibt es den Schalter „Dein Rang: Legendary · Masters+“. Standard ist Legendary.","Bei Legendary zählt die Map-Winrate aus Legendary mit (ein Drittel).","Brawler, die in Masters+ selten sind, in Legendary aber oft gepickt werden und gewinnen (z. B. Bo auf Gem Fort, Bibi auf Sneaky Fields), bekommen nur noch den halben Abzug.","Bei Gegnern zählt, was in Legendary wirklich gepickt wird (z. B. Spike, Mico, Brock). Das betrifft vor allem die Konter-Gefahr.","Statistiken neu geladen: 5,3 Mio. Spiele aus Brawl Atlas, DraftMeta bis 25.11."]},
+ {v:"202611251332", d:"25.11.2026", t:"Rang-Schalter Legendary, neue Daten", items:["Oben gibt es den Schalter „Dein Rang: Legendary · Masters+“. Standard ist Legendary.","Bei Legendary zählt die Map-Winrate je zur Hälfte aus Masters+ und Legendary. Wenn es in Masters+ nur wenige Spiele gibt, zählt Legendary mehr.","Brawler, die in Masters+ selten sind, in Legendary aber oft gepickt werden und gewinnen (z. B. Bo auf Gem Fort, Bibi auf Sneaky Fields), bekommen nur noch den halben Abzug.","Bei Gegnern zählt, was in Legendary wirklich gepickt wird (z. B. Spike, Mico, Brock). Das betrifft vor allem die Konter-Gefahr.","Bull wird auf Kaboom Canyon nie mehr als First Pick vorgeschlagen.","Brock ist auf Hideout unter den Top 5 First Picks.","Melodie steht ab Pick 4 weiter oben, an Pick 1–3 etwas tiefer.","Statistiken neu geladen: 5,3 Mio. Spiele aus Brawl Atlas, DraftMeta bis 25.11."]},
  {v:"202611242335", d:"24.11.2026", t:"Farbige Winrate, Nani-Konter", items:["Die Winrate bei „Letzte Drafts“ ist farbig: grün über 55 %, gelb 50–55 %, rot unter 50 %.","Nani kontert Piper und Bea leicht (eigene Erfahrung, weil dazu Daten fehlen)."]},
  {v:"202611242326", d:"24.11.2026", t:"Winrate im Verlauf", items:["Bei „Letzte Drafts“ steht neben Siegen und Niederlagen jetzt auch deine Winrate in Prozent."]},
  {v:"202611242323", d:"24.11.2026", t:"Account-Filter, kürzere Gründe", items:[

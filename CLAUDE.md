@@ -113,10 +113,12 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   < 1,5 % −4,5, < 0,5 % −7 (außer Top-Picks der Map und `MAP_BONUS`). Pickrate = Anteil der Spiele (Summe aller Brawler ≈ 6).
 - Rang-Schalter „Dein Rang: Legendary · Masters+“ (`RANK`, localStorage `rdc-rank`, Standard Legendary; Nutzer spielt meist Legendary,
   zu Season-Beginn Mythic). Daten: `STATS.leg` (DraftMeta `rank=legendary`, I–III nur zusammen abrufbar; `{drafts, all, maps:{map:{name:[pr,wr,n]}}}`),
-  nicht in der Rang-Gewichtung. Nur bei Legendary (`legS`): Map-Winrate = 2/3 Masters+ + 1/3 Legendary (ab 300 Spielen);
+  nicht in der Rang-Gewichtung. Nur bei Legendary (`legS`): Map-Winrate 50/50 Masters+/Legendary (ab 300 Legendary-Spielen; Masters+ < 300 Spiele → Legendary-Anteil steigt bis 100 %);
   „kaum gespielt“-Abzug für eigene Picks halbiert, wenn Legendary-Pickrate ≥ 5 % und Winrate ≥ 50 % (Grund „Legendary-Pick (x %)“, z. B. Bo Gem Fort);
   Gegner-Seite (`mapFit(b,map,true)`: Banns, Gegner-Antworten beim First Pick; `freeCounters`) nutzt die höhere Pickrate (`enemyPr`),
   weil Legendary-Gegner z. B. Spike, Mico, Brock, Colt oft picken (meist mit < 50 % Winrate).
+- Nutzer 25.11.: Bull auf Kaboom Canyon −2,5, als First Pick −10 („nie First Pick hier“). Brock Hideout `MAP_BONUS` +4,5 (Top 5 First Picks).
+  Melodie ab Pick 4 +2 („stark ab Pick 4“, ersetzt „Assassine zu früh“), an Pick 1–3 −2.
 - Auswertung 23.11. abends: Panel zeigt „Bester Schutz vor Assassinen: X (Platz n)“, wenn Team-Check A schwach und Gegner noch picken
   (`aNote`, nur Brawler ab 3,5 % Pickrate). Vision-Gear-Tipp bei bush = 2 (Dry Season auf bush 1 gesetzt, Nutzer: wenig Büsche).
   Ring of Fire = offen, wenig Wände, viele Büsche außen (Nutzer). Cosmo `MAP_BONUS` Ring of Fire +6 (Nutzer; Daten: 48 % Map-Winrate, verliert gegen Mortis/Edgar/Mandy). Weich: Bo>Amber, Mr. P>Chester;
