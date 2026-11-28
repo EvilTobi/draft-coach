@@ -447,7 +447,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611281542"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611281552"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -517,7 +517,9 @@ const isFast = b => b.tags.includes("m")||b.cls==="A"||inL(FAST_HP,b);
 const PLAY_TIPS = {"Trunk>Mico":"Gegen Mico abwarten, bis er gesprungen ist, sonst geht dein Angriff ins Leere",
   "Colette>Bibi":"Bibi konsequent verfolgen, sie darf nicht in Ruhe Super laden",
   "Gale>Doug":"Gale geht auf Doug: ihn zuerst ausschalten, seine Super belebt einen Mitspieler wieder",
-  "Colette>8-Bit":"Colette geht auf 8-Bit: ihr Schaden in % der HP knackt ihn am schnellsten"};
+  "Colette>8-Bit":"Colette geht auf 8-Bit: ihr Schaden in % der HP knackt ihn am schnellsten",
+  // Nutzer 28.11. (Belle's Rock gewonnen): Daten sehen Mortis vorn (+2,5 %), deshalb nur Spieltipp, kein Konter
+  "Brock>Mortis":"Gegen Mortis beim Team bleiben und das Sprung-Gadget zum Ausweichen aufheben"};
 function gamePlan(mine,en,map){
   const mb=mine.map(get), eb=en.map(get), perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
   let best=null; // gegnerische Brawler so zuteilen, dass die Summe der Vorteile am größten ist
@@ -553,6 +555,8 @@ function teamHint(mine,en,map){
     out.push(`${fragile.map(n).join(" und ")} ${fragile.length>1?"bleiben":"bleibt"} nah ${guard&&!fragile.includes(guard)?`bei ${n(guard)}`:"beim Team"}, ${ass.map(n).join(" und ")} ${ass.length>1?"warten":"wartet"} auf einen Fehler.`); }
   if(tank.length){ const k=mb.find(b=>inL(TANK_KILLERS,b)||b.tags.includes("at")); if(k) out.push(`${n(k)} hält ${tank.map(n).join(" und ")} auf. Super für den Tank aufheben.`); }
   if(eb.some(e=>e.name==="Mr. P")&&mb.some(b=>inL(MRP_PREY,b))) out.push("Mr. Ps Portal sofort zerstören, sonst fangen seine Träger eure Schüsse ab.");
+  // Nutzer 28.11.: Sirius ist ohne Schatten schwach, mit Schatten kommen z. B. Colette und Chester kaum gegen ihn an
+  if(mb.some(b=>b.name==="Sirius")) out.push("Sirius: erst Schatten sammeln, dann angreifen. Ohne Schatten nicht nach vorne gehen.");
   const mode={ko:"Knockout: nicht als Erster sterben. Mit Vorsprung zurückziehen und die Gegner kommen lassen.",
     bounty:"Bounty: Sterne schützen. Mit Vorsprung defensiv spielen, keinen Spieler mit vielen Sternen verlieren.",
     heist:(()=>{const fast=mb.filter(isFast);
@@ -574,7 +578,8 @@ function modelSyn(a,b){const i=MI[a],j=MI[b]; if(!MD||i==null||j==null) return 0
 // Noch nicht in Ranked verfügbar: erscheinen automatisch, sobald sie in Pro-Scrims gespielt werden
 const NOT_YET_RANKED = ["Rey","Ruby","Thunder Frogs"];
 NAMES = NAMES.filter(n=>!NOT_YET_RANKED.includes(n) || (ST.brawlers[n]&&ST.brawlers[n].scrim&&ST.brawlers[n].scrim[0]>0));
-const mapPower=r=>(r.wr-.5)*10+Math.sqrt((r.pr||0)+(r.br||0))*3;
+// Winrate nach Stichprobe gewichtet (Nutzer 28.11.: El Primo war mit 60 Spielen und 70 % Top-Pick auf Hot Potato)
+const mapPower=r=>(r.wr-.5)*r.n/(r.n+300)*10+Math.sqrt((r.pr||0)+(r.br||0))*3;
 DEFAULT_MAPS.forEach(m=>{const d=ST.maps[m.name]; if(d&&Object.keys(d).length>20){ m.st=d; m.curated=m.picks;
   m.picks=Object.entries(d).filter(([n,r])=>r.n>=50&&NAMES.includes(n)).sort((x,y)=>mapPower(y[1])-mapPower(x[1])).slice(0,8).map(x=>x[0]) }});
 
@@ -666,7 +671,9 @@ const TANK_HARD = ["Colette","Griff","Pierce","Otis","Shelly","R-T","Sirius"];
 const MAP_BONUS = {"Parallel Plays":{"Juju":[2.5,"Wasser-Map"]},
   "Ring of Fire":{"Cosmo":[6,"Zonen-Kontrolle"]},
   // Nutzer 25.11.: Brock gehört auf Hideout in die Top 5 der First Picks (Masters+ 61 % Pickrate, Legendary 51 % Winrate)
-  "Hideout":{"Brock":[4.5,"Standard-Pick hier"]}};
+  "Hideout":{"Brock":[4.5,"Standard-Pick hier"]},
+  // Nutzer 28.11.: auf Hot Potato lieber Rico/Colt als First Pick (Lou wird dort leicht gekontert)
+  "Hot Potato":{"Rico":[3,"Safe-Schaden"],"Colt":[3,"Safe-Schaden"]}};
 // Brawler mit vielen Projektilen: laden Gigis Super schnell auf (Nutzer-Erfahrung)
 const MULTI_PROJ = ["Amber","Griff","Meg","Gene","Colt","Rico","Tara","Shelly","Spike","8-Bit"]; // nicht Bull/Darryl: gegen die verliert Gigi im Nahkampf
 // Sniper mit Einzelschuss: Mr. Ps Portal fängt die Schüsse ab (Nutzer-Erfahrung: Piper ist gegen Mr. P mit Super nutzlos)
@@ -1353,7 +1360,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
- {v:"202611281542", d:"28.11.2026", t:"Konter gegen Assassinen, Vince-Konter", items:["An Pick 4 und 5, wenn die Gegner noch den Last Pick haben: Brawler, die eine wahrscheinliche Gegner-Assassine kontern, stehen weiter oben („stoppt Edgar“).","Gigi zählt nur noch als Konter, wenn Brawler mit vielen Projektilen beteiligt sind (z. B. Rico, Griff, Meg). Gegen Vince allein nicht mehr.","Edgar und Mortis zählen als Konter gegen Vince."]},
+ {v:"202611281552", d:"28.11.2026", t:"Konter gegen Assassinen, Hot Potato, Spieltipps", items:["An Pick 4 und 5, wenn die Gegner noch den Last Pick haben: Brawler, die eine wahrscheinliche Gegner-Assassine kontern, stehen weiter oben („stoppt Edgar“).","Gigi zählt nur noch als Konter, wenn Brawler mit vielen Projektilen beteiligt sind (z. B. Rico, Griff, Meg). Gegen Vince allein nicht mehr.","Edgar und Mortis zählen als Konter gegen Vince.","Hot Potato: Rico und Colt stehen als First Pick weiter oben.","Top-Picks einer Map brauchen genug Spiele. El Primo auf Hot Potato fällt raus, er hatte nur 60 Spiele.","Spieltipps: Brock gegen Mortis (beim Team bleiben, Sprung-Gadget aufheben) und Sirius (erst Schatten sammeln)."]},
  {v:"202611261220", d:"26.11.2026", t:"Rang-Schalter Legendary, neue Daten", items:["Oben gibt es den Schalter „Dein Rang: Legendary · Masters+“. Standard ist Legendary.","Bei Legendary zählt die Map-Winrate je zur Hälfte aus Masters+ und Legendary. Wenn es in Masters+ nur wenige Spiele gibt, zählt Legendary mehr.","Brawler, die in Masters+ selten sind, in Legendary aber oft gepickt werden und gewinnen (z. B. Bo auf Gem Fort, Bibi auf Sneaky Fields), bekommen nur noch den halben Abzug.","Bei Gegnern zählt, was in Legendary wirklich gepickt wird (z. B. Spike, Mico, Brock). Das betrifft vor allem die Konter-Gefahr.","Bull wird auf Kaboom Canyon nie mehr als First Pick vorgeschlagen.","Brock ist auf Hideout unter den Top 5 First Picks.","Melodie steht ab Pick 4 weiter oben, an Pick 1–3 etwas tiefer.","Statistiken neu geladen: 5,3 Mio. Spiele aus Brawl Atlas, DraftMeta bis 25.11."]},
  {v:"202611242335", d:"24.11.2026", t:"Farbige Winrate, Nani-Konter", items:["Die Winrate bei „Letzte Drafts“ ist farbig: grün über 55 %, gelb 50–55 %, rot unter 50 %.","Nani kontert Piper und Bea leicht (eigene Erfahrung, weil dazu Daten fehlen)."]},
  {v:"202611242326", d:"24.11.2026", t:"Winrate im Verlauf", items:["Bei „Letzte Drafts“ steht neben Siegen und Niederlagen jetzt auch deine Winrate in Prozent."]},
