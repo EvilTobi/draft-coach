@@ -447,7 +447,7 @@ const histSig = h => JSON.stringify([h.res||"",h.note||"",h.picks,h.bans]);
 
 // ---------- Daten (data/stats.js, erzeugt von scripts/update_data.py) ----------
 // Rang-Gewichtung: Pro 40 %, Masters III 35 %, Masters I+II 25 %. Quellen: DraftMeta, Brawl Atlas, Corestats, BrawlLab, BrawlPick
-const APP_VERSION = "202611261220"; // = VERSION in sw.js (ohne "draft-coach-")
+const APP_VERSION = "202611281542"; // = VERSION in sw.js (ohne "draft-coach-")
 const ST = window.STATS || {brawlers:{},maps:{},vs:{},syn:{},model:null,sources:{},weights:{pro:.4,m3:.35,m12:.25}};
 const pct=x=>Math.round(x*100)+"%";
 const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";
@@ -622,7 +622,9 @@ const SOFT_COUNTERS = {
  "Ziggy":["Lily","Kenji","Mina","Alli","Starr Nova","Kaze"], "Clancy":["Rico","Mr. P","Larry & Lawrie"], "Glowy":["Emz","8-Bit","Mr. P","Gale"],
  "Larry & Lawrie":["Mr. P","Mortis","Alli","Bolt","Starr Nova","Kaze","Kenji"], "Crow":["Poco"], "Byron":["Poco"],
  // Video Arthur Brawl Stars (17.11.), mit Daten bestätigt
- "Penny":["Berry"], "Piper":["Nani"], "Bea":["Nani"], "Amber":["Poco","Bo"], "Chester":["Mr. P"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"]};
+ "Penny":["Berry"], "Piper":["Nani"], "Bea":["Nani"], "Amber":["Poco","Bo"], "Chester":["Mr. P"], "Melodie":["Surge"], "Shade":["Surge"], "Kenji":["Surge"], "Kaze":["Nori"], "Colt":["Nori"],
+ // Nutzer 28.11.: Vince wird von Edgar und Mortis gekontert (Daten Edgar: +2,2 %, 8.008 Spiele), Gigi nur mit Projektil-Teammates (freeCounters)
+ "Vince":["Edgar","Mortis"]};
 const SIT_COUNTERS = {
  "Sam":["8-Bit","Emz"], "Lola":["Brock"], "Pam":["Willow","Penny"], "Jacky":["Lumi","Shelly"], "Ollie":["El Primo","Emz"],
  "Janet":["Sprout","Ziggy"], "Sandy":["El Primo","Bo"], "Ziggy":["El Primo","Buzz"], "Clancy":["Willow","8-Bit"], "Glowy":["Poco","Lou"],
@@ -749,8 +751,10 @@ function hardC(e,b){ const k=e+"|"+b+(ONWATER?"|w":"")+(WALLMAP?"|m":""); if(k i
   if(v&&v[1]>=150) c+=cl(v[0]*10); else if(w&&w[1]>=150) c-=cl(w[0]*10); else c+=cl(modelPair(e,b)*10);
   return HC[k]=c }
 // Wie viele harte Konter von b sind noch frei? Gewicht nach aktueller Stärke (Meta) des Konters
-function freeCounters(b,u,map){ const out=[];
-  for(const n of NAMES){ if(n===b) continue; if(map&&map.st&&enemyPr(map,n)<.015) continue; const c=hardC(n,b); if(c<.8) continue;
+// Nutzer 28.11.: Gigi ist nur ein Konter, wenn b oder sein Team viele Projektile hat (Rico, Griff, Meg …), z. B. nicht gegen Vince allein
+function freeCounters(b,u,map,mates){ const out=[];
+  const gigiOk=MULTI_PROJ.includes(b)||(mates||[]).some(m=>MULTI_PROJ.includes(m.name||m));
+  for(const n of NAMES){ if(n===b) continue; if(n==="Gigi"&&!gigiOk) continue; if(map&&map.st&&enemyPr(map,n)<.015) continue; const c=hardC(n,b); if(c<.8) continue;
     const wt=Math.max(.3,Math.min(1.5,(get(n).meta-3)/4)); out.push({n,c,wt,free:!u.has(n.toLowerCase()),v:Math.min(2.5,c)*wt}) }
   return out.sort((x,y)=>y.v-x.v) }
 // Wie verwundbar ist ein Team? Werte 0 (abgesichert) bis ~1.5 (sehr anfällig). Skaliert auf Teamgröße.
@@ -927,6 +931,14 @@ function score(name,map,mates,enemies,slot,team){
   if(b.name==="Gigi"){ const mp=enB.filter(e=>inL(MULTI_PROJ,e));
     if(mp.length&&slot>=3){ s+=Math.min(7,4+1.5*(mp.length-1))+(slot===5&&mp.length>=2?3.5:0); why.unshift(["+",`Super-Futter: ${mp.map(e=>e.name).join(", ")}`]) }
     else { s-=3; why.push(["-","Gigi erst später"]) } }
+  // Nutzer 28.11.: Pick 4/5, Gegner haben noch den Last Pick und eine starke Assassine ist frei (Edgar auf Undermine)
+  // → Brawler, die sie hart kontern, nach oben (nur wenn im Team noch keiner sie kontert)
+  if((slot===3||slot===4)&&plan.later>0){ const u=used();
+    // die drei wahrscheinlichsten freien Assassinen (Pickrate im eigenen Rang), absteigend gewichtet
+    const fa=NAMES.filter(n=>n!==b.name&&!u.has(n.toLowerCase())).map(get).filter(x=>x.cls==="A"&&x.meta>=7&&(!map.st||enemyPr(map,x.name)>=.035))
+      .sort((p,q)=>enemyPr(map,q.name)-enemyPr(map,p.name)).slice(0,3);
+    const hit=fa.map((a,i)=>({a,w:[1.5,.8,.5][i]})).filter(o=>hardC(b.name,o.a.name)>=.8&&!tm.some(t=>hardC(t.name,o.a.name)>=.8));
+    if(hit.length){ s+=hit.reduce((z,o)=>z+o.w,0)*(slot===4?1.2:1); why.push(["+",`stoppt ${hit.slice(0,2).map(o=>o.a.name).join(", ")}`]) } }
   // Werfer früh (Pick 1–3): Assassinen sind noch frei und kontern ihn (Nutzer). Mr. P nur leicht. Ausnahme: Map-Bonus (Juju auf Parallel Plays)
   if(lobby(b)&&b.name!=="Mr. P"&&slot<=2&&!(MAP_BONUS[map.name]||{})[b.name]){
     const u=used(), freeA=NAMES.filter(n=>!u.has(n.toLowerCase())).map(get).filter(x=>x.cls==="A"&&x.meta>=7);
@@ -997,7 +1009,7 @@ function score(name,map,mates,enemies,slot,team){
   // gewichtet nach Stärke des Konters. Sind alle harten Konter gebannt/gepickt, gibt es einen Bonus. First Pick nur 35 %
   // (dort steckt das Risiko schon im First-Pick-Wert).
   if(plan.later>0){
-    const fc=freeCounters(b.name,used(),map), fr=fc.filter(x=>x.free), w=slot===0?.35:1;
+    const fc=freeCounters(b.name,used(),map,tm), fr=fc.filter(x=>x.free), w=slot===0?.35:1;
     if(fr.length){ // Die Gegner brauchen nur einen Konter: der beste freie zählt voll, weitere nur wenig
       const pen=Math.min(7,1.5*fr[0].v+.35*fr.slice(1,4).reduce((a,x)=>a+x.v,0))*w; s-=pen;
       if(pen>=.5) why.push(["-",`Konter frei: ${fr.slice(0,3).map(x=>x.n).join(", ")}${fr.length>3?" …":""}`]) }
@@ -1341,6 +1353,7 @@ try{const so=ST.sources||{}; $("data-stand").textContent=ST.generated?`Datenstan
 const fmtVer=v=>v&&v.length>=12?`${v.slice(6,8)}.${v.slice(4,6)}.${v.slice(0,4)}-${v.slice(8,12)}`:"?";
 // ---------- Changelog (neueste zuerst; v = Version wie APP_VERSION, bei jedem Update oben ergänzen) ----------
 const CHANGELOG = [
+ {v:"202611281542", d:"28.11.2026", t:"Konter gegen Assassinen, Vince-Konter", items:["An Pick 4 und 5, wenn die Gegner noch den Last Pick haben: Brawler, die eine wahrscheinliche Gegner-Assassine kontern, stehen weiter oben („stoppt Edgar“).","Gigi zählt nur noch als Konter, wenn Brawler mit vielen Projektilen beteiligt sind (z. B. Rico, Griff, Meg). Gegen Vince allein nicht mehr.","Edgar und Mortis zählen als Konter gegen Vince."]},
  {v:"202611261220", d:"26.11.2026", t:"Rang-Schalter Legendary, neue Daten", items:["Oben gibt es den Schalter „Dein Rang: Legendary · Masters+“. Standard ist Legendary.","Bei Legendary zählt die Map-Winrate je zur Hälfte aus Masters+ und Legendary. Wenn es in Masters+ nur wenige Spiele gibt, zählt Legendary mehr.","Brawler, die in Masters+ selten sind, in Legendary aber oft gepickt werden und gewinnen (z. B. Bo auf Gem Fort, Bibi auf Sneaky Fields), bekommen nur noch den halben Abzug.","Bei Gegnern zählt, was in Legendary wirklich gepickt wird (z. B. Spike, Mico, Brock). Das betrifft vor allem die Konter-Gefahr.","Bull wird auf Kaboom Canyon nie mehr als First Pick vorgeschlagen.","Brock ist auf Hideout unter den Top 5 First Picks.","Melodie steht ab Pick 4 weiter oben, an Pick 1–3 etwas tiefer.","Statistiken neu geladen: 5,3 Mio. Spiele aus Brawl Atlas, DraftMeta bis 25.11."]},
  {v:"202611242335", d:"24.11.2026", t:"Farbige Winrate, Nani-Konter", items:["Die Winrate bei „Letzte Drafts“ ist farbig: grün über 55 %, gelb 50–55 %, rot unter 50 %.","Nani kontert Piper und Bea leicht (eigene Erfahrung, weil dazu Daten fehlen)."]},
  {v:"202611242326", d:"24.11.2026", t:"Winrate im Verlauf", items:["Bei „Letzte Drafts“ steht neben Siegen und Niederlagen jetzt auch deine Winrate in Prozent."]},

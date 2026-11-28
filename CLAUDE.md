@@ -119,6 +119,9 @@ Rang-Gewichtung: **Pro 40 %, Masters III 35 %, Masters I+II 25 %**, kleine Stich
   weil Legendary-Gegner z. B. Spike, Mico, Brock, Colt oft picken (meist mit < 50 % Winrate).
 - Nutzer 25.11.: Bull auf Kaboom Canyon −2,5, als First Pick −10 („nie First Pick hier“). Brock Hideout `MAP_BONUS` +4,5 (Top 5 First Picks).
   Melodie ab Pick 4 +2 („stark ab Pick 4“, ersetzt „Assassine zu früh“), an Pick 1–3 −2.
+- Nutzer 28.11.: Pick 4/5 mit Gegner-Last-Pick: Brawler, die eine der 3 wahrscheinlichsten freien Assassinen (Meta ≥ 7, nach `enemyPr`)
+  hart kontern, +1,5/+0,8/+0,5 (×1,2 an Pick 5), nur wenn im Team noch keiner sie kontert („stoppt X“).
+  Gigi zählt in `freeCounters` nur als Konter, wenn b oder ein Teammate in `MULTI_PROJ` ist. Weich: Edgar, Mortis > Vince.
 - Auswertung 23.11. abends: Panel zeigt „Bester Schutz vor Assassinen: X (Platz n)“, wenn Team-Check A schwach und Gegner noch picken
   (`aNote`, nur Brawler ab 3,5 % Pickrate). Vision-Gear-Tipp bei bush = 2 (Dry Season auf bush 1 gesetzt, Nutzer: wenig Büsche).
   Ring of Fire = offen, wenig Wände, viele Büsche außen (Nutzer). Cosmo `MAP_BONUS` Ring of Fire +6 (Nutzer; Daten: 48 % Map-Winrate, verliert gegen Mortis/Edgar/Mandy). Weich: Bo>Amber, Mr. P>Chester;
